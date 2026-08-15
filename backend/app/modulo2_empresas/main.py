@@ -3,8 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.modulo2_empresas.routes import router
 
-# Create DB Tables
-Base.metadata.create_all(bind=engine)
+# DB Tables are now created by init.sql via Docker
 
 app = FastAPI(title="Microservicio Módulo 2: Empresas y Vacantes", version="1.0.0")
 
