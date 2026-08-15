@@ -2,9 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
+from app.auth import get_current_user
 from . import models, schemas
 
-router = APIRouter(prefix="/api/modulo2", tags=["modulo2"])
+router = APIRouter(
+    prefix="/api/modulo2",
+    tags=["modulo2"],
+    dependencies=[Depends(get_current_user)]
+)
 
 # --- Catalogs ---
 @router.get("/sectors", response_model=List[schemas.Sector])
@@ -90,11 +95,15 @@ def create_application(app: schemas.ApplicationCreate, db: Session = Depends(get
 
 @router.get("/applications/job/{job_offer_id}", response_model=List[schemas.Application])
 def get_applications_by_job(job_offer_id: int, db: Session = Depends(get_db)):
-    return db.query(models.CandidateApplication).filter(models.CandidateApplication.job_offer_id == job_offer_id).all()
+    return db.query(models.CandidateApplication).filter(
+        models.CandidateApplication.job_offer_id == job_offer_id
+    ).all()
 
 @router.put("/applications/{application_id}/status", response_model=schemas.Application)
 def update_application_status(application_id: int, status_update: schemas.ApplicationUpdateStatus, db: Session = Depends(get_db)):
-    db_app = db.query(models.CandidateApplication).filter(models.CandidateApplication.id == application_id).first()
+    db_app = db.query(models.CandidateApplication).filter(
+        models.CandidateApplication.id == application_id
+    ).first()
     if not db_app:
         raise HTTPException(status_code=404, detail="Application not found")
     db_app.status = status_update.status
