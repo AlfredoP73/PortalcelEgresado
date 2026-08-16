@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.companies.routes import router
-import app.companies.models 
+from app.auth.routes import router
+import app.auth.models  # noqa: F401 — registra los modelos en Base
 
 app = FastAPI(
-    title="Microservicio Módulo 2: Empresas y Vacantes",
+    title="Microservicio de Autenticación",
+    description="Maneja login, registro y validación de tokens JWT",
     version="1.0.0",
 )
 
@@ -22,4 +23,4 @@ app.include_router(router)
 
 @app.get("/")
 def health_check():
-    return {"service": "companies", "status": "ok"}
+    return {"service": "auth", "status": "ok"}

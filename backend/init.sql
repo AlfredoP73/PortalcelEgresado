@@ -174,5 +174,5 @@ INSERT INTO roles (name) VALUES ('ADMIN'), ('COMPANY');
 
 -- Hash for 'password123' generated with bcrypt
 INSERT INTO users (email, password_hash, role_id) VALUES 
-('admin@portal.com', '$2b$12$KkQoT6q3E1.gS/4M.1i.Pujh.P6P4rP8jU3/4b1B.nQz/yXzRzRji', 1),
-('empresa@ejemplo.com', '$2b$12$KkQoT6q3E1.gS/4M.1i.Pujh.P6P4rP8jU3/4b1B.nQz/yXzRzRji', 2);
+('admin@portal.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 1),
+('empresa@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2);

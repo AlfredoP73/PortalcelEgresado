@@ -9,32 +9,69 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: egresados_db
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  backend:
+  # ── Microservicio 1: Autenticación (puerto 8002) ──────────────────────────
+  auth:
     build:
       context: ./backend
-    container_name: portaldel_egresado_backend
+    container_name: portaldel_egresado_auth
+    command: uvicorn app.auth.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  # ── Microservicio 2: Empresas y Vacantes (puerto 8001) ───────────────────
+  companies:
+    build:
+      context: ./backend
+    container_name: portaldel_egresado_companies
+    command: uvicorn app.companies.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8001:8000"
     environment:
       DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_started
     volumes:
       - ./backend:/app
 
+  # ── Frontend React (puerto 5176) ─────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
     container_name: portaldel_egresado_frontend
     ports:
-      - "5173:5173"
+      - "5176:5176"
+    environment:
+      VITE_AUTH_URL: http://localhost:8002
+      VITE_COMPANIES_URL: http://localhost:8001
     depends_on:
-      - backend
+      - auth
+      - companies
     volumes:
       - ./frontend:/app
       - /app/node_modules
