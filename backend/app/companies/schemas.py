@@ -26,19 +26,20 @@ class City(CityBase):
     class Config:
         from_attributes = True
 
-class CareerBase(BaseModel):
+class ProgramBase(BaseModel):
     name: str
 
-class CareerCreate(CareerBase):
+class ProgramCreate(ProgramBase):
     pass
 
-class Career(CareerBase):
+class Program(ProgramBase):
     id: int
     class Config:
         from_attributes = True
 
 # --- Company ---
 class CompanyBase(BaseModel):
+    user_id: Optional[int] = None
     name: str
     description: Optional[str] = None
     contact_email: str
@@ -52,7 +53,7 @@ class CompanyUpdateStatus(BaseModel):
     status: CompanyStatus
 
 class Company(CompanyBase):
-    id: int
+    user_id: int
     status: CompanyStatus
     sector: Sector
     city: City
@@ -69,7 +70,7 @@ class JobOfferBase(BaseModel):
     functions: str
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
-    career_id: int
+    program_id: int
     closing_date: date
 
 class JobOfferCreate(JobOfferBase):
@@ -79,7 +80,7 @@ class JobOffer(JobOfferBase):
     id: int
     status: JobOfferStatus
     company: Company
-    career: Career
+    program: Program
 
     class Config:
         from_attributes = True

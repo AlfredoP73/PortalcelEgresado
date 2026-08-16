@@ -170,9 +170,45 @@ CREATE TABLE matchmaking_weights (
 -- ==============================================================================
 -- DATOS DUMMY INICIALES PARA TESTEAR JWT Y RUTAS
 -- ==============================================================================
-INSERT INTO roles (name) VALUES ('ADMIN'), ('COMPANY');
+INSERT INTO roles (name) VALUES ('ADMIN'), ('COMPANY'), ('GRADUATE');
 
 -- Hash for 'password123' generated with bcrypt
 INSERT INTO users (email, password_hash, role_id) VALUES 
 ('admin@portal.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 1),
-('empresa@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2);
+('empresa@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
+('egresado@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3);
+
+-- CATÁLOGOS BASE
+INSERT INTO countries (name) VALUES ('Colombia');
+INSERT INTO states (name, country_id) VALUES ('Cesar', 1), ('Atlántico', 1), ('Bogotá D.C.', 1);
+INSERT INTO cities (name, state_id) VALUES ('Valledupar', 1), ('Barranquilla', 2), ('Bogotá', 3), ('Aguachica', 1);
+
+INSERT INTO sectors (name) VALUES
+('Tecnología'), ('Salud'), ('Educación'), ('Finanzas'), ('Construcción'), ('Agricultura');
+
+INSERT INTO faculties (name) VALUES
+('Ingeniería y Tecnología'), ('Ciencias de la Salud'), ('Ciencias Administrativas'), ('Derecho y Ciencias Políticas'), ('Ciencias Básicas y Educación');
+
+INSERT INTO programs (name, faculty_id) VALUES
+('Ingeniería de Sistemas', 1), ('Ingeniería Ambiental', 1), ('Ingeniería Electrónica', 1),
+('Enfermería', 2), ('Microbiología', 2), ('Instrumentación Quirúrgica', 2),
+('Administración de Empresas', 3), ('Contaduría Pública', 3), ('Comercio Internacional', 3),
+('Derecho', 4), ('Licenciatura en Matemáticas', 5);
+
+-- EMPRESA DE PRUEBA (user_id = 2 = empresa@ejemplo.com)
+INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
+(2, 'TechCesar S.A.S.', 'Empresa de desarrollo de software y soluciones tecnológicas en el Cesar.', 'contacto@techcesar.com', 1, 1, 'APPROVED');
+
+-- VACANTES DE PRUEBA
+INSERT INTO job_offers (company_id, title, description, requirements, functions, salary_min, salary_max, program_id, closing_date, status) VALUES
+(2, 'Desarrollador Full Stack', 'Buscamos un desarrollador para unirse a nuestro equipo de innovación.', 'React, Node.js, PostgreSQL, 2 años de experiencia mínima.', 'Diseñar y desarrollar aplicaciones web, participar en reuniones de sprint.', 3000000, 5500000, 1, '2026-12-31', 'ACTIVE'),
+(2, 'Analista de Datos Junior', 'Posición para recién egresados interesados en ciencia de datos.', 'Python, SQL, Excel avanzado. Conocimientos en estadística.', 'Elaborar reportes, limpiar datos, apoyar al equipo de BI.', 2000000, 3500000, 1, '2026-11-30', 'ACTIVE');
+
+-- EGRESADO DE PRUEBA (user_id = 3 = egresado@ejemplo.com)
+INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
+(3, 'Juan', 'Pérez', 1, 2025, '3001234567', 'Desarrollador Junior apasionado por la tecnología.');
+
+-- POSTULACIONES DE PRUEBA
+INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
+(1, 3, 'POSTULADO'),
+(1, 3, 'EN_EVALUACION');

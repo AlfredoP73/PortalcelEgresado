@@ -62,7 +62,7 @@ def login(body: schemas.LoginRequest, db: Session = Depends(get_db)):
 
 
 # ── POST /api/auth/register ──────────────────────────────────────────────────
-@router.post("/register", response_model=schemas.MessageResponse,
+@router.post("/register", response_model=schemas.RegisterResponse,
              status_code=status.HTTP_201_CREATED)
 def register(body: schemas.RegisterRequest, db: Session = Depends(get_db)):
     """Crea un nuevo usuario. Rol por defecto: COMPANY (role_id=2)."""
@@ -74,13 +74,15 @@ def register(body: schemas.RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"El rol con id={body.role_id} no existe")
 
-    db.add(models.User(
+    new_user = models.User(
         email=body.email,
         password_hash=get_password_hash(body.password),
         role_id=body.role_id,
-    ))
+    )
+    db.add(new_user)
     db.commit()
-    return {"message": "Usuario registrado exitosamente"}
+    db.refresh(new_user)
+    return {"message": "Usuario registrado exitosamente", "user_id": new_user.id}
 
 
 # ── GET /api/auth/me ─────────────────────────────────────────────────────────

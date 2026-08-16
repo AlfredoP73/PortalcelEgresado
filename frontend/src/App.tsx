@@ -13,8 +13,8 @@ export default function App() {
         {/* Pública */}
         <Route path="/login" element={<Login />} />
 
-        {/* Privadas — envueltas en Layout */}
-        <Route element={<ProtectedRoute />}>
+        {/* Privadas — Módulo 2 (Empresas y Administrador) */}
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COMPANY']} />}>
           <Route
             path="/companies"
             element={<Layout><Companies /></Layout>}

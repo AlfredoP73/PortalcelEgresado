@@ -1,0 +1,25 @@
+from fastapi import Depends, HTTPException, status
+from typing import List
+from app.auth.utils.auth_utils import get_current_user
+
+# ID mapping based on init.sql
+ROLE_MAP = {
+    1: "ADMIN",
+    2: "COMPANY",
+    3: "GRADUATE"
+}
+
+class RoleChecker:
+    def __init__(self, allowed_roles: List[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: dict = Depends(get_current_user)):
+        role_id = user.get("role_id")
+        user_role_name = ROLE_MAP.get(role_id)
+        
+        if not user_role_name or user_role_name not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos suficientes para realizar esta acción"
+            )
+        return user
