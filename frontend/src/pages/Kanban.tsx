@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { Briefcase, ChevronDown, User, Calendar, AlertCircle } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import CandidateDetailsModal from '../components/CandidateDetailsModal';
 
 interface JobOffer {
   id: number;
@@ -14,6 +15,12 @@ interface Application {
   candidate_id: number;
   status: string;
   application_date: string;
+  graduate?: {
+    first_name: string;
+    last_name: string;
+    program_id: number;
+    graduation_year: number;
+  };
 }
 
 const KANBAN_COLUMNS = [
@@ -28,6 +35,8 @@ export default function Kanban() {
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
+  const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
 
   const rawUser = localStorage.getItem('user');
   const user = rawUser ? JSON.parse(rawUser) : null;
@@ -71,10 +80,38 @@ export default function Kanban() {
   const moveApplication = async (appId: number, newStatus: string) => {
     if (isAdmin) return; // Admin only views
     try {
+      // Optimistic update
+      setApplications(prev => prev.map(app => app.id === appId ? { ...app, status: newStatus } : app));
       await api.put(`/applications/${appId}/status`, { status: newStatus });
       if (selectedJob) fetchApplications(selectedJob);
     } catch (error) {
       console.error('Error updating application status:', error);
+      if (selectedJob) fetchApplications(selectedJob); // Revert on error
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, appId: number) => {
+    if (isAdmin) return;
+    setDraggingAppId(appId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', appId.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (isAdmin) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, statusId: string) => {
+    if (isAdmin) return;
+    e.preventDefault();
+    const appIdStr = e.dataTransfer.getData('text/plain');
+    if (!appIdStr) return;
+    const appId = parseInt(appIdStr, 10);
+    setDraggingAppId(null);
+    if (!isNaN(appId)) {
+      moveApplication(appId, statusId);
     }
   };
 
@@ -91,7 +128,8 @@ export default function Kanban() {
             <Briefcase className="h-5 w-5 text-brand-500" />
           </div>
           <select
-            className="input pl-10 appearance-none font-medium text-ink bg-white shadow-sm cursor-pointer"
+            className="input appearance-none font-medium text-ink bg-white shadow-sm cursor-pointer"
+            style={{ paddingLeft: '2.5rem' }}
             value={selectedJob || ''}
             onChange={(e) => setSelectedJob(Number(e.target.value))}
           >
@@ -123,7 +161,12 @@ export default function Kanban() {
               const columnApps = applications.filter(a => a.status.toUpperCase() === col.id);
               
               return (
-                <div key={col.id} className={twMerge("w-80 rounded-2xl border flex flex-col overflow-hidden shadow-sm", col.colorClass)}>
+                <div 
+                  key={col.id} 
+                  className={twMerge("w-80 rounded-2xl border flex flex-col overflow-hidden shadow-sm transition-colors", col.colorClass, !isAdmin && draggingAppId ? "border-dashed" : "")}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, col.id)}
+                >
                   <div className={twMerge("px-5 py-4 border-b border-black/5 flex items-center justify-between", col.headerColor)}>
                     <h3 className="font-bold tracking-wide">{col.title}</h3>
                     <span className="bg-white/60 px-2.5 py-0.5 rounded-full text-sm font-bold shadow-sm">
@@ -138,34 +181,35 @@ export default function Kanban() {
                       </div>
                     ) : (
                       columnApps.map((app) => (
-                        <div key={app.id} className="card p-4 hover:shadow-md transition-shadow group relative bg-white border border-slate-100">
-                          <div className="flex items-start gap-3 mb-3">
+                        <div 
+                          key={app.id} 
+                          draggable={!isAdmin}
+                          onDragStart={(e) => handleDragStart(e, app.id)}
+                          onDragEnd={() => setDraggingAppId(null)}
+                          onClick={() => setSelectedApplicationId(app.id)}
+                          className={twMerge(
+                            "card p-4 hover:shadow-md transition-all cursor-pointer group relative bg-white border", 
+                            draggingAppId === app.id ? "opacity-50 border-brand-500 scale-95" : "border-slate-100"
+                          )}
+                        >
+                          <div className="flex items-start gap-3 mb-1">
                             <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-bold shrink-0">
-                              <User className="w-5 h-5" />
+                              {app.graduate ? `${app.graduate.first_name.charAt(0)}${app.graduate.last_name.charAt(0)}` : <User className="w-5 h-5" />}
                             </div>
                             <div>
-                              <h4 className="font-bold text-ink">Candidato #{app.candidate_id}</h4>
+                              <h4 className="font-bold text-ink">
+                                {app.graduate ? `${app.graduate.first_name} ${app.graduate.last_name}` : `Candidato #${app.candidate_id}`}
+                              </h4>
                               <div className="flex items-center gap-1.5 text-xs text-ink-tertiary mt-0.5">
                                 <Calendar className="w-3 h-3" />
-                                <span>Postulado: {app.application_date ? new Date(app.application_date).toLocaleDateString() : 'N/A'}</span>
+                                <span>{app.application_date ? new Date(app.application_date).toLocaleDateString() : 'N/A'}</span>
                               </div>
                             </div>
                           </div>
-
-                          {!isAdmin && (
-                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-xs font-medium text-ink-secondary">Mover a:</span>
-                              <select 
-                                className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-medium outline-none focus:border-brand-500 cursor-pointer"
-                                value={app.status}
-                                onChange={(e) => moveApplication(app.id, e.target.value)}
-                              >
-                                {KANBAN_COLUMNS.map(c => (
-                                  <option key={c.id} value={c.id}>{c.title}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                          <div className="mt-2 pt-2 border-t border-slate-50 flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">Ver Perfil</span>
+                            {!isAdmin && <span className="text-[10px] text-ink-tertiary uppercase tracking-wider font-bold opacity-0 group-hover:opacity-100 transition-opacity">Arrastrar</span>}
+                          </div>
                         </div>
                       ))
                     )}
@@ -175,6 +219,13 @@ export default function Kanban() {
             })}
           </div>
         </div>
+      )}
+
+      {selectedApplicationId && (
+        <CandidateDetailsModal 
+          applicationId={selectedApplicationId} 
+          onClose={() => setSelectedApplicationId(null)} 
+        />
       )}
     </div>
   );

@@ -14,6 +14,9 @@ class RegisterRequest(BaseModel):
     role_id: int = 2  # Default: COMPANY
 
 
+class ImpersonateRequest(BaseModel):
+    user_id: int
+
 # --- Response bodies ---
 
 class TokenResponse(BaseModel):

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import date, datetime
 from .models import CompanyStatus, JobOfferStatus, ApplicationStatus
 
@@ -100,6 +100,39 @@ class ApplicationUpdateStatus(BaseModel):
 class Application(ApplicationBase):
     id: int
     status: ApplicationStatus
+    
+    class Config:
+        from_attributes = True
+
+class GraduateBasicInfo(BaseModel):
+    user_id: int
+    first_name: str
+    last_name: str
+    program_id: int
+    graduation_year: int
+    
+    class Config:
+        from_attributes = True
+
+class ApplicationWithCandidate(Application):
+    graduate: GraduateBasicInfo
+    
+    class Config:
+        from_attributes = True
+
+class GraduateWithContact(BaseModel):
+    user_id: int
+    first_name: str
+    last_name: str
+    program_id: int
+    graduation_year: int
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    cv_url: Optional[str] = None
+    profile_summary: Optional[str] = None
+    experiences: List[Any] = []
+    academic_histories: List[Any] = []
+    certifications: List[Any] = []
     
     class Config:
         from_attributes = True

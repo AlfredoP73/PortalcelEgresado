@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import { GraduationCap, Plus, Trash2, Upload, Loader2, X, Save, FileText } from 'lucide-react';
@@ -37,28 +38,46 @@ export default function GraduateEducation() {
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const diplomaFile = fd.get('diploma') as File;
+    
+    if (diplomaFile && diplomaFile.size > 0 && diplomaFile.type !== 'application/pdf') {
+      toast.error('El diploma debe ser un archivo PDF');
+      return;
+    }
+
     try {
-      await graduatesApi.post('/education', {
+      const res = await graduatesApi.post('/academic_histories', {
         institution: fd.get('institution'),
         degree: fd.get('degree'),
         start_date: fd.get('start_date'),
         end_date: fd.get('end_date') || null,
       });
+      
+      const newEdu = res.data;
+      if (diplomaFile && diplomaFile.size > 0) {
+        const fileData = new FormData();
+        fileData.append('file', diplomaFile);
+        await graduatesApi.post(`/education/${newEdu.id}/diploma`, fileData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
       setShowModal(false);
       fetchData();
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Error al agregar estudio');
+      toast.error(error.response?.data?.detail || 'Error al agregar estudio');
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('¿Eliminar este historial académico?')) return;
     try {
-      await graduatesApi.delete(`/education/${id}`);
+      await graduatesApi.delete(`/academic_histories/${id}`);
       fetchData();
     } catch (error) {
-      alert('Error al eliminar historial académico');
+      toast.error('Error al eliminar historial académico');
     }
   };
 
@@ -66,7 +85,7 @@ export default function GraduateEducation() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
-      alert('Solo se permiten archivos PDF');
+      toast.error('Solo se permiten archivos PDF');
       return;
     }
 
@@ -79,10 +98,10 @@ export default function GraduateEducation() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       fetchData();
-      alert('Diploma subido exitosamente');
+      toast.success('Diploma subido exitosamente');
     } catch (error) {
       console.error('Error uploading diploma:', error);
-      alert('Error al subir el diploma');
+      toast.error('Error al subir el diploma');
     } finally {
       setUploadingId(null);
     }
@@ -123,9 +142,23 @@ export default function GraduateEducation() {
               </div>
               <div className="flex flex-col gap-3 min-w-[200px] shrink-0">
                 {edu.diploma_url ? (
-                  <a href={`${GRADUATES_URL}${edu.diploma_url}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-xl font-bold text-sm transition-colors">
-                    <FileText className="w-4 h-4" /> Ver Diploma
-                  </a>
+                  <div className="flex flex-col gap-2">
+                    <a href={`${GRADUATES_URL}${edu.diploma_url}`} target="_blank" rel="noreferrer" className="block relative w-full h-32 rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-brand-500 transition-colors group bg-white shadow-sm">
+                      {/* PDF Thumbnail Hack using iframe scaling */}
+                      <iframe 
+                        src={`${GRADUATES_URL}${edu.diploma_url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+                        className="absolute top-0 left-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"
+                        tabIndex={-1}
+                      />
+                      {/* Overlay */}
+                      <div className="absolute inset-0 bg-brand-900/0 group-hover:bg-brand-900/10 transition-colors flex items-center justify-center backdrop-blur-[0px] group-hover:backdrop-blur-[2px]">
+                        <FileText className="w-8 h-8 text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity transform scale-75 group-hover:scale-100 duration-300" />
+                      </div>
+                    </a>
+                    <a href={`${GRADUATES_URL}${edu.diploma_url}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-xl font-bold text-sm transition-colors">
+                      <FileText className="w-4 h-4" /> Ver Documento
+                    </a>
+                  </div>
                 ) : (
                   <div>
                     <input type="file" id={`diploma-${edu.id}`} className="hidden" accept=".pdf" onChange={(e) => handleUploadDiploma(edu.id, e)} disabled={uploadingId === edu.id} />
@@ -169,6 +202,10 @@ export default function GraduateEducation() {
                   <label className="block text-sm font-semibold text-ink-secondary mb-1">Fecha Fin</label>
                   <input name="end_date" type="date" className="input w-full" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-ink-secondary mb-1">Diploma (PDF)</label>
+                <input type="file" name="diploma" accept=".pdf" className="input w-full p-2 bg-white" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancelar</button>

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import api from '../api';
@@ -91,7 +92,7 @@ export default function GraduateProfile() {
       fetchData();
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Error al guardar el perfil.');
+      toast.error('Error al guardar el perfil.');
     }
   };
 
@@ -99,7 +100,7 @@ export default function GraduateProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
-      alert('Solo se permiten archivos PDF');
+      toast.error('Solo se permiten archivos PDF');
       return;
     }
 
@@ -112,10 +113,10 @@ export default function GraduateProfile() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setProfile(prev => prev ? { ...prev, cv_url: res.data.cv_url } : null);
-      alert('Hoja de vida subida exitosamente');
+      toast.success('Hoja de vida subida exitosamente');
     } catch (error) {
       console.error('Error uploading CV:', error);
-      alert('Error al subir la hoja de vida');
+      toast.error('Error al subir la hoja de vida');
     } finally {
       setUploadingCV(false);
     }

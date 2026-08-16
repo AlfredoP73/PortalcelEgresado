@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import api, { authApi } from '../api';
 import { Plus, Check, X, Building2, MapPin, Mail, AlertCircle, Trash2, Edit2, Briefcase, Users } from 'lucide-react';
@@ -75,7 +76,7 @@ export default function Companies() {
       fetchData();
     } catch (error) {
       console.error('Error creating company:', error);
-      alert('Error al registrar empresa. Intente nuevamente.');
+      toast.error('Error al registrar empresa. Intente nuevamente.');
     }
   };
 
@@ -109,7 +110,7 @@ export default function Companies() {
       fetchData();
     } catch (error: any) {
       console.error('Error in admin submit:', error);
-      alert(error.response?.data?.detail || 'Error en la operación. Verifique los datos.');
+      toast.error(error.response?.data?.detail || 'Error en la operación. Verifique los datos.');
     }
   };
 
@@ -120,7 +121,7 @@ export default function Companies() {
       fetchData();
     } catch (error) {
       console.error('Error deleting company:', error);
-      alert('Error al eliminar empresa.');
+      toast.error('Error al eliminar empresa.');
     }
   };
 

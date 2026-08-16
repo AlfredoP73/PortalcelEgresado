@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import { Search, MapPin, Building2, Briefcase, CalendarDays, CheckCircle2, DollarSign } from 'lucide-react';
@@ -55,7 +56,7 @@ export default function JobBoard() {
         setSelectedJob(null);
       }, 3000);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Error al postularse');
+      toast.error(error.response?.data?.detail || 'Error al postularse');
     } finally {
       setApplying(false);
     }
