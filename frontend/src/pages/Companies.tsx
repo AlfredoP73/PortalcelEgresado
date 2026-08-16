@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { authApi } from '../api';
-import { Plus, Check, X, Building2, MapPin, Mail, AlertCircle, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Check, X, Building2, MapPin, Mail, AlertCircle, Trash2, Edit2, Briefcase, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -197,44 +197,104 @@ export default function Companies() {
       );
     }
 
+    const statusColor = myCompany.status.toUpperCase() === 'APPROVED'
+      ? { bg: 'rgba(21,138,88,0.1)', text: '#0e4832', border: 'rgba(21,138,88,0.2)', label: 'APROBADA' }
+      : myCompany.status.toUpperCase() === 'REJECTED'
+      ? { bg: 'rgba(220,38,38,0.08)', text: '#991b1b', border: 'rgba(220,38,38,0.15)', label: 'RECHAZADA' }
+      : { bg: 'rgba(245,158,11,0.08)', text: '#92400e', border: 'rgba(245,158,11,0.2)', label: 'EN REVISIÓN' };
+
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-6">
+        {/* Page title row */}
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold font-heading text-ink tracking-tight">Mi Perfil Corporativo</h2>
-          <span className={twMerge(
-            "px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide border shadow-sm",
-            myCompany.status.toUpperCase() === 'APPROVED' ? "bg-green-50 text-green-700 border-green-200" :
-            myCompany.status.toUpperCase() === 'REJECTED' ? "bg-red-50 text-red-700 border-red-200" :
-            "bg-amber-50 text-amber-700 border-amber-200"
-          )}>
-            {myCompany.status.toUpperCase() === 'APPROVED' ? 'APROBADA' : myCompany.status.toUpperCase() === 'REJECTED' ? 'RECHAZADA' : 'EN REVISIÓN'}
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-main)' }}>Mi Perfil Corporativo</h2>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Información pública de tu empresa en el portal.</p>
+          </div>
+          <span className="px-4 py-1.5 rounded-full text-sm font-bold tracking-wide" style={{ backgroundColor: statusColor.bg, color: statusColor.text, border: `1px solid ${statusColor.border}` }}>
+            {statusColor.label}
           </span>
         </div>
 
-        <div className="card p-8 bg-gradient-to-br from-white to-slate-50/50">
-          <div className="flex items-start gap-6">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-brand-500/30 shrink-0">
-              {myCompany.name.charAt(0)}
+        {/* Hero card */}
+        <div className="card overflow-hidden" style={{ padding: 0 }}>
+          {/* Cover banner */}
+          <div className="h-32 relative" style={{ background: 'linear-gradient(135deg, #0e4832 0%, #158a58 60%, #22a86e 100%)' }}>
+            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+          </div>
+          {/* Profile row */}
+          <div className="px-8 pb-8">
+            <div className="flex items-end gap-5 -mt-10 mb-6">
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-3xl font-extrabold border-4 shadow-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #116e48, #22a86e)', borderColor: 'var(--bg-surface)' }}>
+                {myCompany.name.charAt(0)}
+              </div>
+              <div className="pb-1">
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-main)' }}>{myCompany.name}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{myCompany.sector?.name || 'Sector no especificado'} · {myCompany.city?.name || 'Ciudad'}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold text-ink mb-2">{myCompany.name}</h3>
-              <p className="text-ink-secondary leading-relaxed mb-6">
-                {myCompany.description || 'Sin descripción detallada.'}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 text-ink-secondary bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                  <Mail className="w-5 h-5 text-brand-500" />
-                  <span className="font-medium">{myCompany.contact_email}</span>
-                </div>
-                <div className="flex items-center gap-3 text-ink-secondary bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                  <MapPin className="w-5 h-5 text-brand-500" />
-                  <span className="font-medium">{myCompany.city?.name || 'Ciudad no especificada'}</span>
-                </div>
-                <div className="flex items-center gap-3 text-ink-secondary bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                  <Building2 className="w-5 h-5 text-brand-500" />
-                  <span className="font-medium">{myCompany.sector?.name || 'Sector no especificado'}</span>
+
+            {/* Description */}
+            <p className="text-[15px] leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
+              {myCompany.description || 'Agrega una descripción para que los egresados conozcan mejor tu empresa.'}
+            </p>
+
+            {/* Info chips */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
+                <Mail className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-brand-500)' }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Contacto</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.contact_email}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
+                <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-brand-500)' }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Ubicación</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.city?.name || '—'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
+                <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-brand-500)' }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sector</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.sector?.name || '—'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status alert if pending */}
+        {myCompany.status.toUpperCase() === 'PENDING' && (
+          <div className="rounded-xl px-5 py-4 flex items-start gap-3" style={{ backgroundColor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#d97706' }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#92400e' }}>Perfil en revisión</p>
+              <p className="text-sm mt-0.5" style={{ color: '#b45309' }}>Tu empresa está siendo verificada por la Oficina de Egresados. Pronto recibirás una respuesta.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Quick links */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="card p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(34,168,110,0.1)' }}>
+              <Briefcase className="w-5 h-5" style={{ color: 'var(--color-brand-600)' }} />
+            </div>
+            <div>
+              <p className="font-bold text-sm" style={{ color: 'var(--text-main)' }}>Gestionar Vacantes</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Publica nuevas ofertas laborales</p>
+            </div>
+          </div>
+          <div className="card p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(34,168,110,0.1)' }}>
+              <Users className="w-5 h-5" style={{ color: 'var(--color-brand-600)' }} />
+            </div>
+            <div>
+              <p className="font-bold text-sm" style={{ color: 'var(--text-main)' }}>Ver Candidatos</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Revisa postulaciones activas</p>
             </div>
           </div>
         </div>

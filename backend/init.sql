@@ -197,12 +197,12 @@ INSERT INTO programs (name, faculty_id) VALUES
 
 -- EMPRESA DE PRUEBA (user_id = 2 = empresa@ejemplo.com)
 INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
-(2, 'TechCesar S.A.S.', 'Empresa de desarrollo de software y soluciones tecnológicas en el Cesar.', 'contacto@techcesar.com', 1, 1, 'APPROVED');
+(2, 'TechCesar S.A.S.', 'Empresa de desarrollo de software y soluciones tecnológicas en el Cesar.', 'contacto@techcesar.com', 1, 1, 'approved');
 
 -- VACANTES DE PRUEBA
 INSERT INTO job_offers (company_id, title, description, requirements, functions, salary_min, salary_max, program_id, closing_date, status) VALUES
-(2, 'Desarrollador Full Stack', 'Buscamos un desarrollador para unirse a nuestro equipo de innovación.', 'React, Node.js, PostgreSQL, 2 años de experiencia mínima.', 'Diseñar y desarrollar aplicaciones web, participar en reuniones de sprint.', 3000000, 5500000, 1, '2026-12-31', 'ACTIVE'),
-(2, 'Analista de Datos Junior', 'Posición para recién egresados interesados en ciencia de datos.', 'Python, SQL, Excel avanzado. Conocimientos en estadística.', 'Elaborar reportes, limpiar datos, apoyar al equipo de BI.', 2000000, 3500000, 1, '2026-11-30', 'ACTIVE');
+(2, 'Desarrollador Full Stack', 'Buscamos un desarrollador para unirse a nuestro equipo de innovación.', 'React, Node.js, PostgreSQL, 2 años de experiencia mínima.', 'Diseñar y desarrollar aplicaciones web, participar en reuniones de sprint.', 3000000, 5500000, 1, '2026-12-31', 'active'),
+(2, 'Analista de Datos Junior', 'Posición para recién egresados interesados en ciencia de datos.', 'Python, SQL, Excel avanzado. Conocimientos en estadística.', 'Elaborar reportes, limpiar datos, apoyar al equipo de BI.', 2000000, 3500000, 1, '2026-11-30', 'active');
 
 -- EGRESADO DE PRUEBA (user_id = 3 = egresado@ejemplo.com)
 INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
@@ -210,5 +210,5 @@ INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_ye
 
 -- POSTULACIONES DE PRUEBA
 INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
-(1, 3, 'POSTULADO'),
-(1, 3, 'EN_EVALUACION');
+(1, 3, 'postulado'),
+(2, 3, 'en_evaluacion');

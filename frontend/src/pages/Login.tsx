@@ -1,12 +1,35 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, BookOpen, Users, Award, Briefcase } from 'lucide-react';
 import { authApi } from '../api';
 
 interface ApiError {
     response?: { data?: { detail?: string } };
     message?: string;
 }
+
+const features = [
+    {
+        icon: Briefcase,
+        title: 'Bolsa de Empleo',
+        desc: 'Conectamos egresados con empresas aliadas de la región Caribe.',
+    },
+    {
+        icon: Users,
+        title: 'Red de Egresados',
+        desc: 'Forma parte de una comunidad de más de 15,000 profesionales activos.',
+    },
+    {
+        icon: BookOpen,
+        title: 'Seguimiento Académico',
+        desc: 'Registro y validación del historial laboral y académico post-grado.',
+    },
+    {
+        icon: Award,
+        title: 'Acreditación de Calidad',
+        desc: 'Sistema alineado con los estándares del CNA para instituciones de alta calidad.',
+    },
+];
 
 export default function Login() {
     const navigate = useNavigate();
@@ -39,102 +62,97 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex">
-            {/* ── Left panel: UPC Branding ── */}
-            <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-brand-800 via-brand-700 to-brand-600">
-                {/* Decorative shapes */}
-                <div className="absolute inset-0">
-                    <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-brand-500/20 blur-[100px]" />
-                    <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] rounded-full bg-brand-400/15 blur-[120px]" />
-                    <div className="absolute top-[40%] left-[30%] w-[300px] h-[300px] rounded-full bg-white/5 blur-[80px]" />
-                    {/* Grid pattern */}
-                    <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-                </div>
+            {/* ── Left panel ── */}
+            <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #0e4832 0%, #158a58 60%, #22a86e 100%)' }}>
+                {/* Noise/pattern overlay */}
+                <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+                {/* Glow blobs */}
+                <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6ee7b7, transparent)', filter: 'blur(80px)' }} />
+                <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #34d399, transparent)', filter: 'blur(100px)' }} />
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-                    {/* Top: Logo */}
+                <div className="relative z-10 flex flex-col justify-between p-14 w-full">
+                    {/* Logo header */}
                     <div className="flex items-center gap-4">
-                        <img src="/logo.png" alt="Logo UPC" className="w-16 h-16 drop-shadow-lg" />
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/20 shadow-lg">
+                            <img src="/logo.png" alt="UPC" className="w-10 h-10 object-contain" />
+                        </div>
                         <div>
-                            <p className="text-white/90 text-sm font-semibold tracking-wide">Universidad Popular del Cesar</p>
-                            <p className="text-brand-200 text-xs font-medium">Oficina de Egresados</p>
+                            <p className="text-white font-bold text-[15px] leading-tight">Universidad Popular del Cesar</p>
+                            <p className="text-white/50 text-xs font-medium mt-0.5">Oficina de Seguimiento a Egresados</p>
                         </div>
                     </div>
 
-                    {/* Center: Hero text */}
-                    <div className="max-w-lg animate-fade-in-up">
-                        <h1 className="text-5xl font-extrabold text-white leading-tight tracking-tight mb-6" style={{ fontFamily: 'var(--font-heading)' }}>
-                            Portal de Seguimiento a 
-                            <span className="text-brand-200"> Egresados</span>
-                        </h1>
-                        <p className="text-brand-100/80 text-lg leading-relaxed">
-                            Conectamos egresados con oportunidades laborales reales. 
-                            Gestiona tu hoja de vida, postúlate a vacantes y sé parte 
-                            de la red profesional de la UPC.
-                        </p>
+                    {/* Main content */}
+                    <div className="space-y-10">
+                        <div>
+                            <span className="inline-block text-xs font-bold uppercase tracking-widest text-white/50 mb-4">Sistema de Egresados y Empleabilidad</span>
+                            <h1 className="text-[2.6rem] font-extrabold text-white leading-[1.15] tracking-tight">
+                                Conectando talento<br />
+                                <span className="text-brand-200">con el futuro</span>
+                            </h1>
+                            <p className="text-white/60 text-[15px] leading-relaxed mt-4 max-w-sm">
+                                Plataforma institucional para el seguimiento laboral y académico de los egresados de la UPC.
+                            </p>
+                        </div>
 
-                        {/* Stats */}
-                        <div className="flex gap-8 mt-10">
-                            <div className="text-center">
-                                <p className="text-3xl font-bold text-white">2,500+</p>
-                                <p className="text-brand-200/70 text-sm font-medium mt-1">Egresados Activos</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold text-white">180+</p>
-                                <p className="text-brand-200/70 text-sm font-medium mt-1">Empresas Aliadas</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold text-white">95%</p>
-                                <p className="text-brand-200/70 text-sm font-medium mt-1">Empleabilidad</p>
-                            </div>
+                        {/* Feature grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {features.map(({ icon: Icon, title, desc }) => (
+                                <div key={title} className="rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mb-3">
+                                        <Icon className="w-4 h-4 text-brand-200" />
+                                    </div>
+                                    <p className="text-white font-semibold text-sm leading-tight mb-1">{title}</p>
+                                    <p className="text-white/45 text-xs leading-relaxed">{desc}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Bottom: Copyright */}
-                    <p className="text-brand-300/50 text-xs">
-                        © {new Date().getFullYear()} Universidad Popular del Cesar · Acreditación de Alta Calidad
+                    {/* Footer */}
+                    <p className="text-white/25 text-[11px]">
+                        © {new Date().getFullYear()} Universidad Popular del Cesar · Sistema de Acreditación Institucional
                     </p>
                 </div>
             </div>
 
-            {/* ── Right panel: Login form ── */}
-            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-surface-soft relative">
-                {/* Subtle pattern */}
-                <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--color-pattern) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            {/* ── Right panel: form ── */}
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative" style={{ backgroundColor: 'var(--color-surface-soft)' }}>
+                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(var(--color-pattern) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
 
-                <div className="w-full max-w-[420px] relative z-10">
+                <div className="w-full max-w-[400px] relative z-10">
                     {/* Mobile logo */}
-                    <div className="lg:hidden text-center mb-8 animate-fade-in">
+                    <div className="lg:hidden text-center mb-10">
                         <img src="/logo.png" alt="Logo UPC" className="w-20 h-20 mx-auto mb-4 drop-shadow-md" />
-                        <h1 className="text-2xl font-bold text-ink tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-                            Portal de Egresados
-                        </h1>
+                        <h1 className="text-xl font-bold text-ink tracking-tight">Portal de Egresados</h1>
                         <p className="text-ink-secondary text-sm mt-1">Universidad Popular del Cesar</p>
                     </div>
 
-                    {/* Form card */}
-                    <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                    <div className="animate-fade-in-up">
                         <div className="mb-8 hidden lg:block">
-                            <h2 className="text-2xl font-bold text-ink tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-                                Bienvenido de vuelta
+                            <h2 className="text-[1.75rem] font-bold text-ink tracking-tight leading-tight">
+                                Iniciar sesión
                             </h2>
-                            <p className="text-ink-secondary mt-2 text-[15px]">
-                                Ingresa tus credenciales para acceder al portal
+                            <p className="text-ink-secondary mt-2 text-sm leading-relaxed">
+                                Ingresa tus credenciales para acceder al portal institucional.
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Email */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-semibold text-ink-secondary">
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-semibold text-ink">
                                     Correo electrónico
                                 </label>
-                                <div className="relative group">
-                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ink-tertiary group-focus-within:text-brand-500 transition-colors" />
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                                        <Mail className="w-4 h-4 text-ink-tertiary" />
+                                    </span>
                                     <input
                                         type="email"
-                                        className="input pl-11 py-3 text-[15px]"
-                                        placeholder="correo@universidad.edu.co"
+                                        className="input"
+                                        style={{ paddingLeft: '2.5rem', paddingTop: '0.75rem', paddingBottom: '0.75rem', fontSize: '0.9375rem' }}
+                                        placeholder="correo@upc.edu.co"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
@@ -144,15 +162,18 @@ export default function Login() {
                             </div>
 
                             {/* Password */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-semibold text-ink-secondary">
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-semibold text-ink">
                                     Contraseña
                                 </label>
-                                <div className="relative group">
-                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ink-tertiary group-focus-within:text-brand-500 transition-colors" />
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                                        <Lock className="w-4 h-4 text-ink-tertiary" />
+                                    </span>
                                     <input
                                         type={showPassword ? 'text' : 'password'}
-                                        className="input pl-11 pr-12 py-3 text-[15px]"
+                                        className="input"
+                                        style={{ paddingLeft: '2.5rem', paddingRight: '3rem', paddingTop: '0.75rem', paddingBottom: '0.75rem', fontSize: '0.9375rem' }}
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -164,66 +185,35 @@ export default function Login() {
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-tertiary hover:text-ink-secondary transition-colors"
                                         tabIndex={-1}
+                                        aria-label="Mostrar u ocultar contraseña"
                                     >
-                                        {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Error */}
                             {error && (
-                                <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3.5 text-sm animate-scale-in">
-                                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
-                                    <span className="font-medium">{error}</span>
+                                <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm animate-scale-in">
+                                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-500" />
+                                    <span>{error}</span>
                                 </div>
                             )}
 
-                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full btn-primary justify-center py-3.5 text-[15px] rounded-xl"
+                                className="w-full btn-primary py-3.5 text-[15px] rounded-xl"
+                                style={{ marginTop: '1.25rem' }}
                             >
                                 {loading ? (
-                                    <><Loader2 className="w-5 h-5 animate-spin" /> Verificando...</>
-                                ) : (
-                                    'Iniciar Sesión'
-                                )}
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</>
+                                ) : 'Acceder al Portal'}
                             </button>
                         </form>
 
-                        {/* Test credentials */}
-                        <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
-                            <p className="text-[11px] text-ink-tertiary font-bold uppercase tracking-[0.1em] mb-3">
-                                Credenciales de prueba
-                            </p>
-                            <div className="space-y-2">
-                                <button 
-                                    type="button"
-                                    onClick={() => { setEmail('admin@portal.com'); setPassword('password123'); }}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-surface-muted cursor-pointer group"
-                                    style={{ border: '1px solid var(--color-border)' }}
-                                >
-                                    <span className="flex items-center gap-2.5">
-                                        <span className="w-7 h-7 rounded-md bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold">A</span>
-                                        <span className="text-ink-secondary group-hover:text-ink transition-colors">admin@portal.com</span>
-                                    </span>
-                                    <span className="text-ink-tertiary text-xs">Admin</span>
-                                </button>
-                                <button 
-                                    type="button"
-                                    onClick={() => { setEmail('empresa@ejemplo.com'); setPassword('password123'); }}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-surface-muted cursor-pointer group"
-                                    style={{ border: '1px solid var(--color-border)' }}
-                                >
-                                    <span className="flex items-center gap-2.5">
-                                        <span className="w-7 h-7 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">E</span>
-                                        <span className="text-ink-secondary group-hover:text-ink transition-colors">empresa@ejemplo.com</span>
-                                    </span>
-                                    <span className="text-ink-tertiary text-xs">Empresa</span>
-                                </button>
-                            </div>
-                        </div>
+                        <p className="text-center text-xs text-ink-tertiary mt-8">
+                            ¿Problemas para ingresar? Contacta a la Oficina de Egresados.
+                        </p>
                     </div>
                 </div>
             </div>
