@@ -5,6 +5,22 @@ import Login from './pages/Login';
 import Companies from './pages/Companies';
 import JobOffers from './pages/JobOffers';
 import Kanban from './pages/Kanban';
+import GraduateProfile from './pages/GraduateProfile';
+import GraduateExperience from './pages/GraduateExperience';
+import GraduateEducation from './pages/GraduateEducation';
+import JobBoard from './pages/JobBoard';
+import GraduateApplications from './pages/GraduateApplications';
+import GraduateSurveys from './pages/GraduateSurveys';
+import AdminGraduates from './pages/AdminGraduates';
+import AdminApplications from './pages/AdminApplications';
+
+const HomeRedirect = () => {
+  const rawUser = localStorage.getItem('user');
+  if (!rawUser) return <Navigate to="/login" replace />;
+  const user = JSON.parse(rawUser);
+  if (user.role_name === 'GRADUATE') return <Navigate to="/profile" replace />;
+  return <Navigate to="/companies" replace />;
+};
 
 export default function App() {
   return (
@@ -27,10 +43,46 @@ export default function App() {
             path="/kanban"
             element={<Layout><Kanban /></Layout>}
           />
+          <Route
+            path="/admin/graduates"
+            element={<Layout><AdminGraduates /></Layout>}
+          />
+          <Route
+            path="/admin/applications"
+            element={<Layout><AdminApplications /></Layout>}
+          />
+        </Route>
+
+        {/* Privadas — Módulo 1 (Egresados) */}
+        <Route element={<ProtectedRoute allowedRoles={['GRADUATE', 'ADMIN']} />}>
+          <Route
+            path="/profile"
+            element={<Layout><GraduateProfile /></Layout>}
+          />
+          <Route
+            path="/experience"
+            element={<Layout><GraduateExperience /></Layout>}
+          />
+          <Route
+            path="/education"
+            element={<Layout><GraduateEducation /></Layout>}
+          />
+          <Route
+            path="/jobs"
+            element={<Layout><JobBoard /></Layout>}
+          />
+          <Route
+            path="/applications"
+            element={<Layout><GraduateApplications /></Layout>}
+          />
+          <Route
+            path="/surveys"
+            element={<Layout><GraduateSurveys /></Layout>}
+          />
         </Route>
 
         {/* Redirige raíz */}
-        <Route path="/" element={<Navigate to="/companies" replace />} />
+        <Route path="/" element={<HomeRedirect />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 from .models import CompanyStatus, JobOfferStatus, ApplicationStatus
 
 # --- Catalogs ---
@@ -88,8 +88,8 @@ class JobOffer(JobOfferBase):
 # --- Application ---
 class ApplicationBase(BaseModel):
     job_offer_id: int
-    candidate_id: int
-    application_date: date
+    graduate_id: int
+    application_date: datetime
 
 class ApplicationCreate(ApplicationBase):
     pass

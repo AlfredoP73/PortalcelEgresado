@@ -101,7 +101,8 @@ CREATE TABLE work_experiences (
     position VARCHAR(100) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE,
-    description TEXT
+    description TEXT,
+    certificate_url VARCHAR(255)
 );
 
 CREATE TABLE academic_histories (
@@ -110,7 +111,8 @@ CREATE TABLE academic_histories (
     institution VARCHAR(150) NOT NULL,
     degree VARCHAR(150) NOT NULL,
     start_date DATE NOT NULL,
-    end_date DATE
+    end_date DATE,
+    diploma_url VARCHAR(255)
 );
 
 CREATE TABLE certifications (
@@ -167,6 +169,27 @@ CREATE TABLE matchmaking_weights (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ------------------------------------------------------------------------------
+-- ENCUESTAS DE EGRESADOS
+-- ------------------------------------------------------------------------------
+CREATE TABLE surveys (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    questions_json JSONB NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE survey_responses (
+    id SERIAL PRIMARY KEY,
+    survey_id INT REFERENCES surveys(id) ON DELETE CASCADE,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    answers_json JSONB NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(survey_id, graduate_id)
+);
+
 -- ==============================================================================
 -- DATOS DUMMY INICIALES PARA TESTEAR JWT Y RUTAS
 -- ==============================================================================
@@ -219,3 +242,12 @@ INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_ye
 INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
 (1, 3, 'POSTULADO'),
 (2, 3, 'EN_EVALUACION');
+
+-- ENCUESTAS DE PRUEBA
+INSERT INTO surveys (title, description, questions_json) VALUES
+('Encuesta de Seguimiento a Egresados (M01)', 'Por favor, diligencie esta encuesta para conocer su situación laboral actual e impacto en el medio.', 
+'[
+    {"id": "q1", "type": "radio", "question": "¿Se encuentra laborando actualmente?", "options": ["Sí", "No"]},
+    {"id": "q2", "type": "text", "question": "¿En qué sector económico se desempeña?"},
+    {"id": "q3", "type": "radio", "question": "¿Su empleo actual tiene relación con su programa académico?", "options": ["Sí, totalmente", "Parcialmente", "No tiene relación"]}
+]');

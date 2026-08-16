@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 import enum
 from app.database import Base
@@ -75,8 +75,8 @@ class CandidateApplication(Base):
     __tablename__ = "applications"
     id = Column(Integer, primary_key=True, index=True)
     job_offer_id = Column(Integer, ForeignKey("job_offers.id"), nullable=False)
-    candidate_id = Column(Integer, nullable=False) # Refers to Module 1 logically
-    application_date = Column(Date, nullable=False)
+    graduate_id = Column(Integer, nullable=False) # Refers to Module 1 logically
+    application_date = Column(DateTime, nullable=False)
     status = Column(Enum(ApplicationStatus), default=ApplicationStatus.POSTULADO)
 
     job_offer = relationship("JobOffer", back_populates="applications")

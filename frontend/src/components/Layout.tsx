@@ -2,7 +2,7 @@ import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Building2, Briefcase, LayoutDashboard,
-  LogOut, ChevronRight, Sun, Moon, UserCircle
+  LogOut, ChevronRight, Sun, Moon, UserCircle, ClipboardList, CheckCircle, Users, FileText, GraduationCap, Search
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
@@ -10,9 +10,20 @@ interface LayoutProps { children: ReactNode }
 
 const getNavItems = (role: string) => {
   const allItems = [
-    { name: role === 'COMPANY' ? 'Mi Empresa' : 'Directorio Empresas', path: '/companies', icon: Building2, roles: ['ADMIN', 'COMPANY'] },
-    { name: 'Vacantes', path: '/job-offers', icon: Briefcase, roles: ['ADMIN', 'COMPANY'] },
-    { name: 'Candidatos', path: '/kanban', icon: LayoutDashboard, roles: ['ADMIN', 'COMPANY'] },
+    // Module Admin (Only Admin)
+    { name: 'Directorio Egresados', path: '/admin/graduates', icon: Users, roles: ['ADMIN'], section: 'Administración Global' },
+    { name: 'Reporte Postulaciones', path: '/admin/applications', icon: FileText, roles: ['ADMIN'], section: 'Administración Global' },
+    // Module 2: Companies
+    { name: role === 'COMPANY' ? 'Mi Empresa' : 'Directorio Empresas', path: '/companies', icon: Building2, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
+    { name: 'Vacantes', path: '/job-offers', icon: Briefcase, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
+    { name: 'Candidatos', path: '/kanban', icon: LayoutDashboard, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
+    // Module 1: Graduates
+    { name: 'Datos Personales', path: '/profile', icon: UserCircle, roles: ['GRADUATE'], section: 'Módulo Egresado' },
+    { name: 'Experiencia Laboral', path: '/experience', icon: Briefcase, roles: ['GRADUATE'], section: 'Módulo Egresado' },
+    { name: 'Historial Académico', path: '/education', icon: GraduationCap, roles: ['GRADUATE'], section: 'Módulo Egresado' },
+    { name: 'Explorar Vacantes', path: '/jobs', icon: Search, roles: ['GRADUATE'], section: 'Empleabilidad' },
+    { name: 'Mis Postulaciones', path: '/applications', icon: CheckCircle, roles: ['GRADUATE'], section: 'Empleabilidad' },
+    { name: 'Seguimiento M01', path: '/surveys', icon: ClipboardList, roles: ['GRADUATE'], section: 'Institucional' },
   ];
   return allItems.filter(item => item.roles.includes(role));
 };
@@ -21,6 +32,8 @@ const pageTitles: Record<string, string> = {
   '/companies': 'Directorio de Empresas',
   '/job-offers': 'Ofertas Laborales',
   '/kanban': 'Gestión de Candidatos',
+  '/profile': 'Mi Perfil Profesional',
+  '/jobs': 'Explorar Ofertas Laborales',
 };
 
 export default function Layout({ children }: LayoutProps) {
@@ -53,7 +66,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const currentTitle = pageTitles[location.pathname]
-    ?? (roleName === 'COMPANY' ? 'Portal Empresa' : 'Portal Administrativo');
+    ?? (roleName === 'COMPANY' ? 'Portal Empresa' : roleName === 'GRADUATE' ? 'Portal Egresado' : 'Portal Administrativo');
 
   return (
     <div className="min-h-screen flex font-sans" style={{ backgroundColor: 'var(--bg-main)' }}>
@@ -78,33 +91,41 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 pt-5 pb-2 space-y-0.5 relative z-10 overflow-y-auto">
-          <p className="text-[10px] font-bold uppercase px-3 mb-3" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>
-            {roleName === 'COMPANY' ? 'Módulo Empresa' : 'Módulo Admin'}
-          </p>
-          {navItems.map(({ name, path, icon: Icon }) => {
-            const active = location.pathname.startsWith(path);
-            return (
-              <Link
-                key={path}
-                to={path}
-                className={twMerge(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group relative',
-                  active
-                    ? 'text-white'
-                    : 'hover:text-white'
-                )}
-                style={{
-                  backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: active ? '#fff' : 'rgba(255,255,255,0.5)',
-                }}
-              >
-                <Icon className="w-[17px] h-[17px] flex-shrink-0" style={{ color: active ? '#7cdaac' : 'rgba(255,255,255,0.35)' }} />
-                <span className="flex-1 truncate">{name}</span>
-                {active && <ChevronRight className="w-3.5 h-3.5 opacity-50" />}
-                {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: '#7cdaac' }} />}
-              </Link>
-            );
-          })}
+          {(() => {
+            let lastSection = '';
+            return navItems.map(({ name, path, icon: Icon, section }) => {
+              const active = location.pathname === path.split('?')[0];
+              const showSection = section !== lastSection;
+              lastSection = section || '';
+              return (
+                <div key={path}>
+                  {showSection && section && (
+                    <p className="text-[10px] font-bold uppercase px-3 mb-3 mt-4 first:mt-0" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>
+                      {section}
+                    </p>
+                  )}
+                  <Link
+                    to={path}
+                    className={twMerge(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group relative',
+                      active
+                        ? 'text-white'
+                        : 'hover:text-white'
+                    )}
+                    style={{
+                      backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      color: active ? '#fff' : 'rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    <Icon className="w-[17px] h-[17px] flex-shrink-0" style={{ color: active ? '#7cdaac' : 'rgba(255,255,255,0.35)' }} />
+                    <span className="flex-1 truncate">{name}</span>
+                    {active && <ChevronRight className="w-3.5 h-3.5 opacity-50" />}
+                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: '#7cdaac' }} />}
+                  </Link>
+                </div>
+              );
+            });
+          })()}
         </nav>
 
         {/* User footer */}
