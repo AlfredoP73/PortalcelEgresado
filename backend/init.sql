@@ -181,10 +181,17 @@ INSERT INTO users (email, password_hash, role_id) VALUES
 -- CATÁLOGOS BASE
 INSERT INTO countries (name) VALUES ('Colombia');
 INSERT INTO states (name, country_id) VALUES ('Cesar', 1), ('Atlántico', 1), ('Bogotá D.C.', 1);
-INSERT INTO cities (name, state_id) VALUES ('Valledupar', 1), ('Barranquilla', 2), ('Bogotá', 3), ('Aguachica', 1);
+INSERT INTO cities (name, state_id) VALUES 
+('Valledupar', 1), ('Aguachica', 1), ('Agustín Codazzi', 1), ('Bosconia', 1), ('Chimichagua', 1), ('El Copey', 1), ('San Alberto', 1), ('Curumaní', 1), ('La Paz', 1), ('Pueblo Bello', 1),
+('Barranquilla', 2), ('Soledad', 2), ('Malambo', 2), ('Sabanalarga', 2), ('Baranoa', 2),
+('Bogotá', 3), 
+('Medellín', 1), ('Cali', 1), ('Bucaramanga', 1), ('Cartagena', 1), ('Santa Marta', 1), ('Pereira', 1), ('Manizales', 1), ('Cúcuta', 1), ('Ibagué', 1), ('Villavicencio', 1), ('Pasto', 1), ('Montería', 1), ('Valledupar', 1), ('Popayán', 1), ('Sincelejo', 1), ('Riohacha', 1), ('Tunja', 1), ('Florencia', 1), ('Quibdó', 1), ('Arauca', 1), ('Yopal', 1), ('Mocoa', 1), ('Puerto Carreño', 1), ('Inírida', 1), ('San José del Guaviare', 1), ('Mitú', 1), ('Leticia', 1), ('San Andrés', 1);
 
 INSERT INTO sectors (name) VALUES
-('Tecnología'), ('Salud'), ('Educación'), ('Finanzas'), ('Construcción'), ('Agricultura');
+('Tecnología y Software'), ('Salud y Medicina'), ('Educación y Formación'), ('Finanzas y Seguros'), ('Construcción e Ingeniería'), ('Agricultura y Ganadería'),
+('Comercio Minorista (Retail)'), ('Telecomunicaciones'), ('Energía y Minería'), ('Transporte y Logística'), ('Manufactura y Producción'), ('Turismo y Hostelería'),
+('Marketing y Publicidad'), ('Consultoría Empresarial'), ('Servicios Legales'), ('Arte y Entretenimiento'), ('Medios de Comunicación'), ('Gobierno y Administración Pública'),
+('Recursos Humanos'), ('Desarrollo Inmobiliario');
 
 INSERT INTO faculties (name) VALUES
 ('Ingeniería y Tecnología'), ('Ciencias de la Salud'), ('Ciencias Administrativas'), ('Derecho y Ciencias Políticas'), ('Ciencias Básicas y Educación');
@@ -197,12 +204,12 @@ INSERT INTO programs (name, faculty_id) VALUES
 
 -- EMPRESA DE PRUEBA (user_id = 2 = empresa@ejemplo.com)
 INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
-(2, 'TechCesar S.A.S.', 'Empresa de desarrollo de software y soluciones tecnológicas en el Cesar.', 'contacto@techcesar.com', 1, 1, 'approved');
+(2, 'TechCesar S.A.S.', 'Empresa de desarrollo de software y soluciones tecnológicas en el Cesar.', 'contacto@techcesar.com', 1, 1, 'APPROVED');
 
 -- VACANTES DE PRUEBA
 INSERT INTO job_offers (company_id, title, description, requirements, functions, salary_min, salary_max, program_id, closing_date, status) VALUES
-(2, 'Desarrollador Full Stack', 'Buscamos un desarrollador para unirse a nuestro equipo de innovación.', 'React, Node.js, PostgreSQL, 2 años de experiencia mínima.', 'Diseñar y desarrollar aplicaciones web, participar en reuniones de sprint.', 3000000, 5500000, 1, '2026-12-31', 'active'),
-(2, 'Analista de Datos Junior', 'Posición para recién egresados interesados en ciencia de datos.', 'Python, SQL, Excel avanzado. Conocimientos en estadística.', 'Elaborar reportes, limpiar datos, apoyar al equipo de BI.', 2000000, 3500000, 1, '2026-11-30', 'active');
+(2, 'Desarrollador Full Stack', 'Buscamos un desarrollador para unirse a nuestro equipo de innovación.', 'React, Node.js, PostgreSQL, 2 años de experiencia mínima.', 'Diseñar y desarrollar aplicaciones web, participar en reuniones de sprint.', 3000000, 5500000, 1, '2026-12-31', 'ACTIVE'),
+(2, 'Analista de Datos Junior', 'Posición para recién egresados interesados en ciencia de datos.', 'Python, SQL, Excel avanzado. Conocimientos en estadística.', 'Elaborar reportes, limpiar datos, apoyar al equipo de BI.', 2000000, 3500000, 1, '2026-11-30', 'ACTIVE');
 
 -- EGRESADO DE PRUEBA (user_id = 3 = egresado@ejemplo.com)
 INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
@@ -210,5 +217,5 @@ INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_ye
 
 -- POSTULACIONES DE PRUEBA
 INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
-(1, 3, 'postulado'),
-(2, 3, 'en_evaluacion');
+(1, 3, 'POSTULADO'),
+(2, 3, 'EN_EVALUACION');

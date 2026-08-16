@@ -6,7 +6,14 @@ import { twMerge } from 'tailwind-merge';
 interface JobOffer {
   id: number;
   title: string;
-  company: { name: string };
+  description?: string;
+  requirements?: string;
+  functions?: string;
+  company: { 
+    name: string;
+    sector?: { name: string };
+    city?: { name: string };
+  };
   salary_min: number;
   salary_max: number;
   status: string;
@@ -18,6 +25,7 @@ export default function JobOffers() {
   const [programs, setPrograms] = useState<{id: number, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<JobOffer | null>(null);
   
   const rawUser = localStorage.getItem('user');
   const user = rawUser ? JSON.parse(rawUser) : null;
@@ -142,7 +150,10 @@ export default function JobOffers() {
                 </div>
               </div>
               
-              <button className="w-full py-2.5 bg-white border border-slate-200 hover:border-brand-500 hover:text-brand-600 text-ink-secondary rounded-xl font-semibold transition-all duration-200 shadow-sm">
+              <button 
+                onClick={() => setSelectedJob(job)}
+                className="w-full py-2.5 bg-white border border-slate-200 hover:border-brand-500 hover:text-brand-600 text-ink-secondary rounded-xl font-semibold transition-all duration-200 shadow-sm"
+              >
                 Ver Detalles
               </button>
             </div>
@@ -150,10 +161,65 @@ export default function JobOffers() {
         )}
       </div>
 
+      {/* Modal Detalles */}
+      {selectedJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in max-h-[90vh] flex flex-col" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
+            <div className="flex justify-between items-center p-6 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <h3 className="text-2xl font-bold text-ink font-heading">{selectedJob.title}</h3>
+              <button onClick={() => setSelectedJob(null)} className="text-ink-tertiary hover:text-ink transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="flex flex-col gap-1">
+                <h4 className="font-bold text-ink text-lg">{selectedJob.company?.name || 'Empresa Confidencial'}</h4>
+                <p className="text-brand-600 font-medium text-sm">
+                  {selectedJob.company?.sector?.name || 'Sector no especificado'} • {selectedJob.company?.city?.name || 'Ubicación no especificada'}
+                </p>
+              </div>
+              {selectedJob.description && (
+                <div>
+                  <h4 className="font-bold text-ink mb-2 text-lg">Descripción</h4>
+                  <p className="text-ink-secondary whitespace-pre-line">{selectedJob.description}</p>
+                </div>
+              )}
+              {selectedJob.requirements && (
+                <div>
+                  <h4 className="font-bold text-ink mb-2 text-lg">Requisitos</h4>
+                  <p className="text-ink-secondary whitespace-pre-line">{selectedJob.requirements}</p>
+                </div>
+              )}
+              {selectedJob.functions && (
+                <div>
+                  <h4 className="font-bold text-ink mb-2 text-lg">Funciones</h4>
+                  <p className="text-ink-secondary whitespace-pre-line">{selectedJob.functions}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border" style={{ backgroundColor: 'var(--bg-muted)', borderColor: 'var(--border-color)' }}>
+                <div>
+                  <h4 className="font-bold text-ink mb-1">Salario</h4>
+                  <p className="text-ink-secondary">${selectedJob.salary_min?.toLocaleString()} - ${selectedJob.salary_max?.toLocaleString()}</p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-ink mb-1">Fecha de Cierre</h4>
+                  <p className="text-ink-secondary">{new Date(selectedJob.closing_date).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 shrink-0" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <button onClick={() => setSelectedJob(null)} className="w-full btn-primary">
+                Cerrar Detalles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Creación (Demo) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--modal-bg)', border: '1px solid var(--card-border)' }}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-xl font-bold text-ink font-heading">Publicar Nueva Vacante</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-ink-tertiary hover:text-ink transition-colors">
@@ -192,7 +258,7 @@ export default function JobOffers() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-ink-secondary mb-1">Programa Académico</label>
-                  <select name="program_id" className="input bg-white" required>
+                  <select name="program_id" className="input" required>
                     <option value="">Seleccione un programa...</option>
                     {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>

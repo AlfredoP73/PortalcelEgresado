@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { authApi } from '../api';
 import { Plus, Check, X, Building2, MapPin, Mail, AlertCircle, Trash2, Edit2, Briefcase, Users } from 'lucide-react';
-import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 interface Sector { id: number; name: string }
@@ -224,43 +223,56 @@ export default function Companies() {
           </div>
           {/* Profile row */}
           <div className="px-8 pb-8">
-            <div className="flex items-end gap-5 -mt-10 mb-6">
+            <div className="flex items-end gap-5 -mt-10 mb-6 relative z-10">
               <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-3xl font-extrabold border-4 shadow-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #116e48, #22a86e)', borderColor: 'var(--bg-surface)' }}>
                 {myCompany.name.charAt(0)}
               </div>
               <div className="pb-1">
-                <h3 className="text-xl font-bold" style={{ color: 'var(--text-main)' }}>{myCompany.name}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{myCompany.sector?.name || 'Sector no especificado'} · {myCompany.city?.name || 'Ciudad'}</p>
+                <h3 className="text-2xl font-bold font-heading tracking-tight" style={{ color: 'var(--text-main)' }}>{myCompany.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    <Building2 className="w-3.5 h-3.5 opacity-70" />
+                    {myCompany.sector?.name || 'Sector no especificado'}
+                  </span>
+                  <span className="text-ink-tertiary">•</span>
+                  <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    <MapPin className="w-3.5 h-3.5 opacity-70" />
+                    {myCompany.city?.name || 'Ciudad'}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Description */}
-            <p className="text-[15px] leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
-              {myCompany.description || 'Agrega una descripción para que los egresados conozcan mejor tu empresa.'}
-            </p>
+            <div className="mb-8 p-5 rounded-2xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
+              <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Acerca de la empresa</h4>
+              <p className="text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                {myCompany.description || 'Agrega una descripción para que los egresados conozcan mejor tu empresa. Destaca tu cultura y misión.'}
+              </p>
+            </div>
 
             {/* Info chips */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
-                <Mail className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-brand-500)' }} />
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Contacto</p>
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.contact_email}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1 p-4 rounded-xl transition-colors hover:bg-[var(--bg-muted)] border" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Mail className="w-4 h-4" style={{ color: 'var(--color-brand-500)' }} />
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Contacto Principal</p>
                 </div>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.contact_email}</p>
               </div>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
-                <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-brand-500)' }} />
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Ubicación</p>
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.city?.name || '—'}</p>
+              <div className="flex flex-col gap-1 p-4 rounded-xl transition-colors hover:bg-[var(--bg-muted)] border" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="w-4 h-4" style={{ color: 'var(--color-brand-500)' }} />
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Ubicación</p>
                 </div>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.city?.name || '—'}</p>
               </div>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
-                <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-brand-500)' }} />
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sector</p>
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.sector?.name || '—'}</p>
+              <div className="flex flex-col gap-1 p-4 rounded-xl transition-colors hover:bg-[var(--bg-muted)] border" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 className="w-4 h-4" style={{ color: 'var(--color-brand-500)' }} />
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Industria / Sector</p>
                 </div>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{myCompany.sector?.name || '—'}</p>
               </div>
             </div>
           </div>
@@ -322,8 +334,8 @@ export default function Companies() {
       </div>
 
       {adminModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="modal-content rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--modal-bg)', border: '1px solid var(--card-border)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
+          <div className="modal-content rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-xl font-bold text-ink font-heading">
                 {editingCompany ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
