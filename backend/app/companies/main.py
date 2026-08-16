@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.companies.routes import router
+from app.companies.controllers.catalog_controller import router as catalog_router
+from app.companies.controllers.company_controller import router as company_router
+from app.companies.controllers.job_offer_controller import router as job_offer_router
+from app.companies.controllers.application_controller import router as application_router
 import app.companies.models
 import app.auth.models  # Register User/Role models so FK to users.id resolves
 
@@ -18,7 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(catalog_router)
+app.include_router(company_router)
+app.include_router(job_offer_router)
+app.include_router(application_router)
 
 
 @app.get("/")

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -13,6 +14,11 @@ import GraduateApplications from './pages/GraduateApplications';
 import GraduateSurveys from './pages/GraduateSurveys';
 import AdminGraduates from './pages/AdminGraduates';
 import AdminApplications from './pages/AdminApplications';
+import AdminSectors from './pages/AdminSectors';
+import AdminCities from './pages/AdminCities';
+import AdminPrograms from './pages/AdminPrograms';
+import AdminUsers from './pages/AdminUsers';
+import CompanyTalentPool from './pages/CompanyTalentPool';
 
 const HomeRedirect = () => {
   const rawUser = localStorage.getItem('user');
@@ -25,6 +31,7 @@ const HomeRedirect = () => {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" reverseOrder={false} />
       <Routes>
         {/* Pública */}
         <Route path="/login" element={<Login />} />
@@ -34,6 +41,10 @@ export default function App() {
           <Route
             path="/companies"
             element={<Layout><Companies /></Layout>}
+          />
+          <Route
+            path="/talent-pool"
+            element={<Layout><CompanyTalentPool /></Layout>}
           />
           <Route
             path="/job-offers"
@@ -50,6 +61,22 @@ export default function App() {
           <Route
             path="/admin/applications"
             element={<Layout><AdminApplications /></Layout>}
+          />
+          <Route
+            path="/admin/sectors"
+            element={<Layout><AdminSectors /></Layout>}
+          />
+          <Route
+            path="/admin/cities"
+            element={<Layout><AdminCities /></Layout>}
+          />
+          <Route
+            path="/admin/programs"
+            element={<Layout><AdminPrograms /></Layout>}
+          />
+          <Route
+            path="/admin/users"
+            element={<Layout><AdminUsers /></Layout>}
           />
         </Route>
 

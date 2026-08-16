@@ -1,7 +1,8 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
-import { graduatesApi } from '../api';
+import { graduatesApi, authApi } from '../api';
 import api from '../api';
-import { Users, GraduationCap, Phone, ExternalLink, Plus, X, Save, Loader2 } from 'lucide-react';
+import { Users, GraduationCap, Phone, ExternalLink, Plus, X, Save, Loader2, PlayCircle } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
@@ -87,11 +88,25 @@ export default function AdminGraduates() {
       await graduatesApi.post('/admin/graduates', data);
       setShowModal(false);
       fetchGraduates();
-      alert('Egresado registrado exitosamente');
+      toast.success('Egresado registrado exitosamente');
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Error al registrar egresado');
+      toast.error(error.response?.data?.detail || 'Error al registrar egresado');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImpersonate = async (userId: number) => {
+    try {
+      const res = await authApi.post('/impersonate', { user_id: userId });
+      const { access_token, user } = res.data;
+      localStorage.setItem('adminToken', localStorage.getItem('access_token') || '');
+      localStorage.setItem('adminUser', localStorage.getItem('user') || '');
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      window.location.href = '/profile';
+    } catch (error) {
+      toast.error('Error al impersonar usuario');
     }
   };
 
@@ -150,6 +165,9 @@ export default function AdminGraduates() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleImpersonate(grad.user_id)} title="Actuar como egresado" className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 hover:bg-brand-100 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors border border-brand-200">
+                          <PlayCircle className="w-4 h-4" /> Actuar Como
+                        </button>
                         <button onClick={() => setSelectedGraduate(grad)} className="inline-flex items-center gap-1 bg-ink-50 text-ink hover:bg-ink-100 px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors border border-transparent hover:border-ink-200">
                           Ver Detalles
                         </button>
@@ -241,6 +259,14 @@ export default function AdminGraduates() {
             </div>
             
             <div className="p-6 space-y-8">
+              {selectedGraduate.cv_url && (
+                <div>
+                  <h4 className="text-lg font-bold text-ink mb-4">Hoja de Vida (CV)</h4>
+                  <a href={`${GRADUATES_URL}${selectedGraduate.cv_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-brand-50 text-brand-700 px-4 py-2 rounded-xl font-bold transition-colors hover:bg-brand-100 border border-brand-200">
+                    <ExternalLink className="w-4 h-4" /> Ver Hoja de Vida
+                  </a>
+                </div>
+              )}
               <div>
                 <h4 className="text-lg font-bold text-ink mb-4">Experiencia Laboral</h4>
                 {selectedGraduate.experiences && selectedGraduate.experiences.length > 0 ? (

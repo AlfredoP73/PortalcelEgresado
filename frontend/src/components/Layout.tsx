@@ -13,8 +13,13 @@ const getNavItems = (role: string) => {
     // Module Admin (Only Admin)
     { name: 'Directorio Egresados', path: '/admin/graduates', icon: Users, roles: ['ADMIN'], section: 'Administración Global' },
     { name: 'Reporte Postulaciones', path: '/admin/applications', icon: FileText, roles: ['ADMIN'], section: 'Administración Global' },
+    { name: 'Gestión Usuarios', path: '/admin/users', icon: Users, roles: ['ADMIN'], section: 'Administración Global' },
+    { name: 'Sectores', path: '/admin/sectors', icon: LayoutDashboard, roles: ['ADMIN'], section: 'Administración Global' },
+    { name: 'Ciudades', path: '/admin/cities', icon: LayoutDashboard, roles: ['ADMIN'], section: 'Administración Global' },
+    { name: 'Programas', path: '/admin/programs', icon: LayoutDashboard, roles: ['ADMIN'], section: 'Administración Global' },
     // Module 2: Companies
     { name: role === 'COMPANY' ? 'Mi Empresa' : 'Directorio Empresas', path: '/companies', icon: Building2, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
+    { name: 'Directorio Egresados', path: '/talent-pool', icon: Users, roles: ['COMPANY'], section: 'Módulo Empresas' },
     { name: 'Vacantes', path: '/job-offers', icon: Briefcase, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
     { name: 'Candidatos', path: '/kanban', icon: LayoutDashboard, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
     // Module 1: Graduates
@@ -61,8 +66,23 @@ export default function Layout({ children }: LayoutProps) {
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('adminToken');
     localStorage.removeItem('user');
     navigate('/login', { replace: true });
+  };
+
+  const isImpersonating = !!localStorage.getItem('adminToken');
+  const handleReturnToAdmin = () => {
+    const originalToken = localStorage.getItem('adminToken');
+    const originalUser = localStorage.getItem('adminUser');
+    if (originalToken && originalUser) {
+      localStorage.setItem('access_token', originalToken);
+      localStorage.setItem('user', originalUser);
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      // Forzar recarga limpia para resetear el usuario en App.tsx
+      window.location.href = '/admin/graduates';
+    }
   };
 
   const currentTitle = pageTitles[location.pathname]
@@ -156,6 +176,15 @@ export default function Layout({ children }: LayoutProps) {
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden relative transition-colors duration-300" style={{ backgroundColor: 'var(--bg-main)' }}>
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--pattern-dot) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+        {isImpersonating && (
+          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-sm font-bold flex items-center justify-between shadow-sm relative z-20">
+            <span>Estás actuando en nombre de este usuario. Tienes todos sus permisos.</span>
+            <button onClick={handleReturnToAdmin} className="bg-yellow-200 hover:bg-yellow-300 px-3 py-1 rounded text-yellow-900 transition-colors">
+              Volver a Administrador
+            </button>
+          </div>
+        )}
 
         {/* Header */}
         <header

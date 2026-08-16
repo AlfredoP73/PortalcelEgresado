@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import { Briefcase, Plus, Trash2, Upload, Loader2, X, Save, FileText } from 'lucide-react';
@@ -38,19 +39,37 @@ export default function GraduateExperience() {
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const certFile = fd.get('certificate') as File;
+    
+    if (certFile && certFile.size > 0 && certFile.type !== 'application/pdf') {
+      toast.error('El certificado debe ser un archivo PDF');
+      return;
+    }
+
     try {
-      await graduatesApi.post('/experiences', {
+      const res = await graduatesApi.post('/experiences', {
         company_name: fd.get('company_name'),
         position: fd.get('position'),
         start_date: fd.get('start_date'),
         end_date: fd.get('end_date') || null,
         description: fd.get('description') || null,
       });
+      
+      const newExp = res.data;
+      if (certFile && certFile.size > 0) {
+        const fileData = new FormData();
+        fileData.append('file', certFile);
+        await graduatesApi.post(`/experiences/${newExp.id}/certificate`, fileData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
       setShowModal(false);
       fetchData();
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Error al agregar experiencia');
+      toast.error(error.response?.data?.detail || 'Error al agregar experiencia');
     }
   };
 
@@ -60,7 +79,7 @@ export default function GraduateExperience() {
       await graduatesApi.delete(`/experiences/${id}`);
       fetchData();
     } catch (error) {
-      alert('Error al eliminar experiencia');
+      toast.error('Error al eliminar experiencia');
     }
   };
 
@@ -68,7 +87,7 @@ export default function GraduateExperience() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
-      alert('Solo se permiten archivos PDF');
+      toast.error('Solo se permiten archivos PDF');
       return;
     }
 
@@ -81,10 +100,10 @@ export default function GraduateExperience() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       fetchData();
-      alert('Certificado subido exitosamente');
+      toast.success('Certificado subido exitosamente');
     } catch (error) {
       console.error('Error uploading cert:', error);
-      alert('Error al subir el certificado');
+      toast.error('Error al subir el certificado');
     } finally {
       setUploadingId(null);
     }
@@ -126,9 +145,23 @@ export default function GraduateExperience() {
               </div>
               <div className="flex flex-col gap-3 min-w-[200px] shrink-0">
                 {exp.certificate_url ? (
-                  <a href={`${GRADUATES_URL}${exp.certificate_url}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-xl font-bold text-sm transition-colors">
-                    <FileText className="w-4 h-4" /> Ver Certificado
-                  </a>
+                  <div className="flex flex-col gap-2">
+                    <a href={`${GRADUATES_URL}${exp.certificate_url}`} target="_blank" rel="noreferrer" className="block relative w-full h-32 rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-brand-500 transition-colors group bg-white shadow-sm">
+                      {/* PDF Thumbnail Hack using iframe scaling */}
+                      <iframe 
+                        src={`${GRADUATES_URL}${exp.certificate_url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+                        className="absolute top-0 left-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"
+                        tabIndex={-1}
+                      />
+                      {/* Overlay */}
+                      <div className="absolute inset-0 bg-brand-900/0 group-hover:bg-brand-900/10 transition-colors flex items-center justify-center backdrop-blur-[0px] group-hover:backdrop-blur-[2px]">
+                        <FileText className="w-8 h-8 text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity transform scale-75 group-hover:scale-100 duration-300" />
+                      </div>
+                    </a>
+                    <a href={`${GRADUATES_URL}${exp.certificate_url}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-xl font-bold text-sm transition-colors">
+                      <FileText className="w-4 h-4" /> Ver Documento
+                    </a>
+                  </div>
                 ) : (
                   <div>
                     <input type="file" id={`cert-${exp.id}`} className="hidden" accept=".pdf" onChange={(e) => handleUploadCert(exp.id, e)} disabled={uploadingId === exp.id} />
@@ -176,6 +209,10 @@ export default function GraduateExperience() {
               <div>
                 <label className="block text-sm font-semibold text-ink-secondary mb-1">Descripción</label>
                 <textarea name="description" className="input w-full min-h-[80px]" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-ink-secondary mb-1">Certificado (PDF)</label>
+                <input type="file" name="certificate" accept=".pdf" className="input w-full p-2 bg-white" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancelar</button>

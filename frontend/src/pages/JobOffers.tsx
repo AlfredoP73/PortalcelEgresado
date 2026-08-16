@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { Plus, Briefcase, Calendar, DollarSign, X, CheckCircle2 } from 'lucide-react';
@@ -70,7 +71,7 @@ export default function JobOffers() {
       fetchJobs();
     } catch (error: any) {
       console.error('Error creating job:', error);
-      alert(error.response?.data?.detail || 'Error al publicar la vacante. Asegúrate de haber completado tu perfil de empresa primero.');
+      toast.error(error.response?.data?.detail || 'Error al publicar la vacante. Asegúrate de haber completado tu perfil de empresa primero.');
     }
   };
 
@@ -163,7 +164,7 @@ export default function JobOffers() {
 
       {/* Modal Detalles */}
       {selectedJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
           <div className="rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in max-h-[90vh] flex flex-col" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-2xl font-bold text-ink font-heading">{selectedJob.title}</h3>
@@ -218,7 +219,7 @@ export default function JobOffers() {
 
       {/* Modal Creación (Demo) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
           <div className="rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-xl font-bold text-ink font-heading">Publicar Nueva Vacante</h3>

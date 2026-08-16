@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import { ClipboardList, CheckCircle2 } from 'lucide-react';
@@ -55,11 +56,11 @@ export default function GraduateSurveys() {
     try {
       setSubmitting(true);
       await graduatesApi.post(`/surveys/${selectedSurvey.id}/response`, answers);
-      alert('Encuesta enviada exitosamente. ¡Gracias por tus respuestas!');
+      toast.success('Encuesta enviada exitosamente. ¡Gracias por tus respuestas!');
       setCompletedSurveys(prev => [...prev, selectedSurvey.id]);
       setSelectedSurvey(null);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Error al enviar encuesta');
+      toast.error(error.response?.data?.detail || 'Error al enviar encuesta');
     } finally {
       setSubmitting(false);
     }

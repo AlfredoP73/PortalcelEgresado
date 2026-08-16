@@ -2,22 +2,23 @@ from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 import enum
 from app.database import Base
+from app.graduates.models import Graduate
 
 # --- Enums ---
 class CompanyStatus(str, enum.Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 class JobOfferStatus(str, enum.Enum):
-    ACTIVE = "active"
-    CLOSED = "closed"
+    ACTIVE = "ACTIVE"
+    CLOSED = "CLOSED"
 
 class ApplicationStatus(str, enum.Enum):
-    POSTULADO = "postulado"
-    EN_EVALUACION = "en_evaluacion"
-    ENTREVISTADO = "entrevistado"
-    CONTRATADO = "contratado"
+    POSTULADO = "POSTULADO"
+    EN_EVALUACION = "EN_EVALUACION"
+    ENTREVISTADO = "ENTREVISTADO"
+    CONTRATADO = "CONTRATADO"
 
 # --- Tablas Catálogo (3FN) ---
 class Sector(Base):
@@ -73,10 +74,12 @@ class JobOffer(Base):
 
 class CandidateApplication(Base):
     __tablename__ = "applications"
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     job_offer_id = Column(Integer, ForeignKey("job_offers.id"), nullable=False)
-    graduate_id = Column(Integer, nullable=False) # Refers to Module 1 logically
+    graduate_id = Column(Integer, ForeignKey("graduates.user_id"), nullable=False) # Refers to Module 1
     application_date = Column(DateTime, nullable=False)
     status = Column(Enum(ApplicationStatus), default=ApplicationStatus.POSTULADO)
 
     job_offer = relationship("JobOffer", back_populates="applications")
+    graduate = relationship("Graduate")

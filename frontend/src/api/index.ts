@@ -10,6 +10,14 @@ export const authApi = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+authApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // ── Cliente de empresas/vacantes ─────────────────────────────────────────────
 const api = axios.create({
   baseURL: `${COMPANIES_URL}/api/modulo2`,
