@@ -38,6 +38,8 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [roleId, setRoleId] = useState(3); // 3 = Egresado, 2 = Empresa
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -45,10 +47,18 @@ export default function Login() {
         setLoading(true);
 
         try {
+            if (isRegistering) {
+                await authApi.post('/register', { email, password, role_id: roleId });
+            }
             const { data } = await authApi.post('/login', { email, password });
             localStorage.setItem('access_token', data.access_token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            navigate('/companies', { replace: true });
+            
+            if (data.user.role_name === 'GRADUATE') {
+                navigate('/profile', { replace: true });
+            } else {
+                navigate('/companies', { replace: true });
+            }
         } catch (err: unknown) {
             const apiErr = err as ApiError;
             setError(
@@ -131,14 +141,32 @@ export default function Login() {
                     <div className="animate-fade-in-up">
                         <div className="mb-8 hidden lg:block">
                             <h2 className="text-[1.75rem] font-bold text-ink tracking-tight leading-tight">
-                                Iniciar sesión
+                                {isRegistering ? 'Crear Cuenta' : 'Iniciar sesión'}
                             </h2>
                             <p className="text-ink-secondary mt-2 text-sm leading-relaxed">
-                                Ingresa tus credenciales para acceder al portal institucional.
+                                {isRegistering 
+                                    ? 'Únete al portal institucional y accede a oportunidades únicas.'
+                                    : 'Ingresa tus credenciales para acceder al portal institucional.'}
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
+                            {isRegistering && (
+                                <div className="space-y-1.5 mb-2">
+                                    <label className="block text-sm font-semibold text-ink">Tipo de cuenta</label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" checked={roleId === 3} onChange={() => setRoleId(3)} className="text-brand-600 focus:ring-brand-500" />
+                                            <span className="text-sm font-medium text-ink-secondary">Egresado</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" checked={roleId === 2} onChange={() => setRoleId(2)} className="text-brand-600 focus:ring-brand-500" />
+                                            <span className="text-sm font-medium text-ink-secondary">Empresa</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Email */}
                             <div className="space-y-1.5">
                                 <label className="block text-sm font-semibold text-ink">
@@ -206,12 +234,22 @@ export default function Login() {
                                 style={{ marginTop: '1.25rem' }}
                             >
                                 {loading ? (
-                                    <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</>
-                                ) : 'Acceder al Portal'}
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> {isRegistering ? 'Registrando...' : 'Verificando...'}</>
+                                ) : (isRegistering ? 'Crear cuenta' : 'Acceder al Portal')}
                             </button>
                         </form>
 
-                        <p className="text-center text-xs text-ink-tertiary mt-8">
+                        <div className="text-center mt-6">
+                            <button 
+                                type="button"
+                                onClick={() => { setIsRegistering(!isRegistering); setError(''); }}
+                                className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
+                            >
+                                {isRegistering ? '¿Ya tienes cuenta? Inicia sesión aquí' : '¿No tienes cuenta? Regístrate como Egresado/Empresa'}
+                            </button>
+                        </div>
+
+                        <p className="text-center text-xs text-ink-tertiary mt-6">
                             ¿Problemas para ingresar? Contacta a la Oficina de Egresados.
                         </p>
                     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Briefcase, ChevronDown, MoveRight, MoveLeft, User, Calendar, AlertCircle } from 'lucide-react';
+import { Briefcase, ChevronDown, User, Calendar, AlertCircle } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 interface JobOffer {

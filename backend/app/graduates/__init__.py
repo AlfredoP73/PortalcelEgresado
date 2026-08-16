@@ -1,0 +1,3 @@
+"""
+Graduates microservice module.
+"""
