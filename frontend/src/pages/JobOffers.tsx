@@ -138,7 +138,7 @@ export default function JobOffers() {
                 {job.company?.name || 'Empresa Confidencial'}
               </p>
               
-              <div className="space-y-3 text-sm text-ink-secondary mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100/60">
+              <div className="space-y-3 text-sm text-ink-secondary mb-6 bg-[var(--bg-muted)] p-4 rounded-xl border border-[var(--border-color)]">
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-4 h-4 text-brand-500" />
                   <span className="font-medium text-ink">
@@ -153,7 +153,7 @@ export default function JobOffers() {
               
               <button 
                 onClick={() => setSelectedJob(job)}
-                className="w-full py-2.5 bg-white border border-slate-200 hover:border-brand-500 hover:text-brand-600 text-ink-secondary rounded-xl font-semibold transition-all duration-200 shadow-sm"
+                className="w-full py-2.5 bg-transparent border border-[var(--border-color)] hover:border-brand-500 hover:text-brand-600 text-ink-secondary rounded-xl font-semibold transition-all duration-200 shadow-sm"
               >
                 Ver Detalles
               </button>
@@ -165,7 +165,7 @@ export default function JobOffers() {
       {/* Modal Detalles */}
       {selectedJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
-          <div className="rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in max-h-[90vh] flex flex-col" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-scale-in max-h-[90vh] flex flex-col" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-2xl font-bold text-ink font-heading">{selectedJob.title}</h3>
               <button onClick={() => setSelectedJob(null)} className="text-ink-tertiary hover:text-ink transition-colors">
@@ -220,7 +220,7 @@ export default function JobOffers() {
       {/* Modal Creación (Demo) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
-          <div className="rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-xl font-bold text-ink font-heading">Publicar Nueva Vacante</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-ink-tertiary hover:text-ink transition-colors">

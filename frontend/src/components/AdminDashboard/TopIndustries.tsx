@@ -23,7 +23,8 @@ const INDUSTRY_COLORS = [
   'var(--color-brand-700)',
 ]
 
-export function TopIndustries() {
+interface Props { programId?: number; year?: number; }
+export function TopIndustries({ programId, year }: Props) {
   const [data, setData] = useState<
     DashboardData['industries']
   >([])
@@ -33,7 +34,7 @@ export function TopIndustries() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const dashboard = await getDashboard()
+        setLoading(true); const dashboard = await getDashboard(programId, year)
         setData(dashboard.industries)
       } catch (error) {
         console.error(error)
@@ -43,7 +44,7 @@ export function TopIndustries() {
     }
 
     loadDashboard()
-  }, [])
+  }, [programId, year])
 
   return (
     <section className="card p-5">

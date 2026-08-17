@@ -112,14 +112,16 @@ export default function AdminGraduates() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-main)' }}>Directorio Global de Egresados</h2>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Consulta y registra nuevos egresados en la plataforma.</p>
+      <div className="page-header">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="page-title">Directorio Global de Egresados</h2>
+            <p className="text-sm mt-1 text-ink-secondary">Consulta y registra nuevos egresados en la plataforma.</p>
+          </div>
+          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Registrar Egresado
+          </button>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Registrar Egresado
-        </button>
       </div>
 
       {loading ? (
@@ -188,7 +190,7 @@ export default function AdminGraduates() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-xl rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
+          <div className="w-full max-w-4xl rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
             <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: 'var(--border-color)' }}>
               <h3 className="text-xl font-bold text-ink">Registrar Nuevo Egresado</h3>
               <button onClick={() => setShowModal(false)} className="text-ink-tertiary hover:text-ink p-1 rounded-full hover:bg-black/5"><X className="w-5 h-5" /></button>
@@ -249,7 +251,7 @@ export default function AdminGraduates() {
 
       {selectedGraduate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
+          <div className="w-full max-w-7xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
             <div className="sticky top-0 bg-[var(--bg-modal)] flex justify-between items-center p-6 border-b z-10" style={{ borderColor: 'var(--border-color)' }}>
               <div>
                 <h3 className="text-xl font-bold text-ink">Perfil del Egresado</h3>

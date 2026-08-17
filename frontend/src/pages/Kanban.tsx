@@ -24,10 +24,10 @@ interface Application {
 }
 
 const KANBAN_COLUMNS = [
-  { id: 'POSTULADO', title: 'Postulados', colorClass: 'bg-blue-50/50 border-blue-200/60', headerColor: 'text-blue-700 bg-blue-100/50' },
-  { id: 'EN_EVALUACION', title: 'En Evaluación', colorClass: 'bg-amber-50/50 border-amber-200/60', headerColor: 'text-amber-700 bg-amber-100/50' },
-  { id: 'ENTREVISTADO', title: 'Entrevistados', colorClass: 'bg-purple-50/50 border-purple-200/60', headerColor: 'text-purple-700 bg-purple-100/50' },
-  { id: 'CONTRATADO', title: 'Contratados', colorClass: 'bg-emerald-50/50 border-emerald-200/60', headerColor: 'text-emerald-700 bg-emerald-100/50' },
+  { id: 'POSTULADO', title: 'Postulados', dotColor: 'bg-slate-400' },
+  { id: 'EN_EVALUACION', title: 'En Evaluación', dotColor: 'bg-yellow-400' },
+  { id: 'ENTREVISTADO', title: 'Entrevistados', dotColor: 'bg-blue-400' },
+  { id: 'CONTRATADO', title: 'Contratados', dotColor: 'bg-brand-400' },
 ];
 
 export default function Kanban() {
@@ -117,10 +117,10 @@ export default function Kanban() {
 
   return (
     <div className="h-full flex flex-col space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="page-header flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold font-heading text-ink tracking-tight">Gestión de Candidatos</h2>
-          <p className="text-ink-secondary mt-1">Revisa y mueve a los postulantes a través del proceso de selección.</p>
+          <h2 className="page-title">Gestión de Candidatos</h2>
+          <p className="text-sm mt-1 text-ink-secondary">Revisa y mueve a los postulantes a través del proceso de selección.</p>
         </div>
         
         <div className="relative min-w-[280px]">
@@ -163,13 +163,16 @@ export default function Kanban() {
               return (
                 <div 
                   key={col.id} 
-                  className={twMerge("w-80 rounded-2xl border flex flex-col overflow-hidden shadow-sm transition-colors", col.colorClass, !isAdmin && draggingAppId ? "border-dashed" : "")}
+                  className={twMerge("w-80 rounded-[12px] flex flex-col overflow-hidden transition-colors border", !isAdmin && draggingAppId ? "border-dashed border-brand-500" : "border-[var(--border-color)] bg-[var(--bg-muted)]")}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, col.id)}
                 >
-                  <div className={twMerge("px-5 py-4 border-b border-black/5 flex items-center justify-between", col.headerColor)}>
-                    <h3 className="font-bold tracking-wide">{col.title}</h3>
-                    <span className="bg-white/60 px-2.5 py-0.5 rounded-full text-sm font-bold shadow-sm">
+                  <div className="px-5 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${col.dotColor}`} />
+                      <h3 className="font-semibold text-ink tracking-wide text-sm uppercase">{col.title}</h3>
+                    </div>
+                    <span className="flex items-center justify-center bg-[var(--bg-surface)] text-ink-secondary w-6 h-6 rounded-full text-xs font-bold shadow-sm border border-[var(--border-color)]">
                       {columnApps.length}
                     </span>
                   </div>
@@ -188,8 +191,8 @@ export default function Kanban() {
                           onDragEnd={() => setDraggingAppId(null)}
                           onClick={() => setSelectedApplicationId(app.id)}
                           className={twMerge(
-                            "card p-4 hover:shadow-md transition-all cursor-pointer group relative bg-white border", 
-                            draggingAppId === app.id ? "opacity-50 border-brand-500 scale-95" : "border-slate-100"
+                            "card p-4 hover:shadow-md transition-all cursor-pointer group relative", 
+                            draggingAppId === app.id ? "opacity-50 border-brand-500 scale-95" : ""
                           )}
                         >
                           <div className="flex items-start gap-3 mb-1">
@@ -206,8 +209,8 @@ export default function Kanban() {
                               </div>
                             </div>
                           </div>
-                          <div className="mt-2 pt-2 border-t border-slate-50 flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">Ver Perfil</span>
+                          <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-brand-600 bg-[var(--color-brand-50)] px-2 py-0.5 rounded-md border border-[var(--color-brand-100)]">Ver Perfil</span>
                             {!isAdmin && <span className="text-[10px] text-ink-tertiary uppercase tracking-wider font-bold opacity-0 group-hover:opacity-100 transition-opacity">Arrastrar</span>}
                           </div>
                         </div>

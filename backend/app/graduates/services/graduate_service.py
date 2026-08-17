@@ -70,6 +70,21 @@ def create_or_update_profile(profile: schemas.GraduateCreate, current_user: dict
     db.refresh(db_profile)
     return db_profile
 
+import boto3
+
+# Setup MinIO client
+MINIO_URL = os.getenv("MINIO_URL", "http://minio:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "cvs")
+
+s3_client = boto3.client(
+    "s3",
+    endpoint_url=MINIO_URL,
+    aws_access_key_id=MINIO_ACCESS_KEY,
+    aws_secret_access_key=MINIO_SECRET_KEY,
+)
+
 def upload_cv(file: UploadFile, current_user: dict, db: Session):
     db_profile = db.query(models.Graduate).filter(models.Graduate.user_id == current_user["id"]).first()
     if not db_profile:
@@ -78,14 +93,28 @@ def upload_cv(file: UploadFile, current_user: dict, db: Session):
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="El archivo debe ser PDF")
         
+    # Ensure bucket exists
+    try:
+        s3_client.head_bucket(Bucket=MINIO_BUCKET_NAME)
+    except Exception:
+        try:
+            s3_client.create_bucket(Bucket=MINIO_BUCKET_NAME)
+        except Exception as e:
+            print(f"Error creating bucket: {e}")
+
     filename = f"{uuid.uuid4()}_{file.filename}"
-    filepath = os.path.join("uploads", "cvs", filename)
     
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        s3_client.upload_fileobj(
+            file.file,
+            MINIO_BUCKET_NAME,
+            filename,
+            ExtraArgs={"ContentType": "application/pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir el archivo a MinIO: {str(e)}")
         
-    db_profile.cv_url = f"/uploads/cvs/{filename}"
+    db_profile.cv_url = f"/api/modulo1/files/{filename}"
     db.commit()
     return {"message": "CV subido exitosamente", "cv_url": db_profile.cv_url}
 
