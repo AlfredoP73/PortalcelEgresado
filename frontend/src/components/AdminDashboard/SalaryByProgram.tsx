@@ -18,7 +18,8 @@ import {
   type DashboardData,
 } from '../../api/dashboardServices'
 
-export function SalaryByProgram() {
+interface Props { programId?: number; year?: number; }
+export function SalaryByProgram({ programId, year }: Props) {
   const [data, setData] = useState<
     DashboardData['salary_by_program']
   >([])
@@ -28,7 +29,7 @@ export function SalaryByProgram() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const dashboard = await getDashboard()
+        setLoading(true); const dashboard = await getDashboard(programId, year)
 
         setData(dashboard.salary_by_program)
       } catch (error) {
@@ -39,7 +40,7 @@ export function SalaryByProgram() {
     }
 
     loadDashboard()
-  }, [])
+  }, [programId, year])
 
   return (
     <section className="card p-5">

@@ -4,6 +4,7 @@ import uuid
 import os
 import shutil
 from app.graduates import models, schemas
+from app.graduates.services.graduate_service import s3_client, MINIO_BUCKET_NAME
 
 def add_experience(experience: schemas.WorkExperienceCreate, current_user: dict, db: Session):
     db_exp = models.WorkExperience(**experience.model_dump(), graduate_id=current_user["id"])
@@ -28,11 +29,17 @@ def upload_experience_certificate(exp_id: int, file: UploadFile, current_user: d
         raise HTTPException(status_code=400, detail="El archivo debe ser PDF")
         
     filename = f"{uuid.uuid4()}_{file.filename}"
-    filepath = os.path.join("uploads", "cvs", filename)
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    
+    try:
+        s3_client.upload_fileobj(
+            file.file,
+            MINIO_BUCKET_NAME,
+            filename,
+            ExtraArgs={"ContentType": "application/pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir el certificado a MinIO: {str(e)}")
         
-    db_exp.certificate_url = f"/uploads/cvs/{filename}"
+    db_exp.certificate_url = f"/api/modulo1/files/{filename}"
     db.commit()
     return {"message": "Certificado subido exitosamente", "certificate_url": db_exp.certificate_url}

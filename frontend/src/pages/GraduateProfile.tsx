@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import api from '../api';
-import { UserCircle, Briefcase, GraduationCap, Mail, Award, Plus, Trash2, Upload, FileText, Loader2, X, Save } from 'lucide-react';
+import { UserCircle, Edit2, GraduationCap, Mail, Award, Plus, Trash2, Upload, FileText, Loader2, X, Save } from 'lucide-react';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
 
@@ -134,8 +134,8 @@ export default function GraduateProfile() {
 
   if (isEditing || !profile) {
     return (
-      <div className="max-w-2xl mx-auto mt-10 animate-fade-in-up">
-        <h2 className="text-2xl font-bold font-heading text-ink mb-6">Completar Hoja de Vida</h2>
+      <div className="max-w-5xl mx-auto mt-10 animate-fade-in-up">
+        <h2 className="page-title mb-6">Completar Hoja de Vida</h2>
         <form onSubmit={handleSaveProfile} className="card p-8 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -181,14 +181,10 @@ export default function GraduateProfile() {
 
   return (
     <div className="space-y-6">
-      {/* Page title row */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-main)' }}>Mi Perfil Profesional</h2>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Tu hoja de vida visible para las empresas.</p>
-        </div>
-        <button onClick={() => setIsEditing(true)} className="btn-ghost shadow-sm">
-          Editar Perfil
+      <div className="page-header flex justify-between items-center">
+        <h2 className="page-title">Mi Perfil</h2>
+        <button onClick={() => setIsEditing(true)} className="btn-primary flex items-center gap-2">
+          <Edit2 className="w-4 h-4" /> Editar Perfil
         </button>
       </div>
 
@@ -200,12 +196,12 @@ export default function GraduateProfile() {
         </div>
         {/* Profile row */}
         <div className="px-8 pb-8">
-          <div className="flex items-end gap-5 -mt-10 mb-6 relative z-10">
-            <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl font-extrabold border-4 shadow-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #116e48, #22a86e)', borderColor: 'var(--bg-surface)' }}>
+          <div className="flex items-end gap-5 -mt-12 mb-6 relative z-10">
+            <div className="w-28 h-28 rounded-full flex items-center justify-center text-white text-4xl font-bold border-[4px] border-white shadow-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #116e48, #22a86e)' }}>
               {profile.first_name.charAt(0)}{profile.last_name.charAt(0)}
             </div>
             <div className="pb-1">
-              <h3 className="text-3xl font-bold font-heading tracking-tight" style={{ color: 'var(--text-main)' }}>
+              <h3 className="text-3xl font-bold tracking-tight text-ink">
                 {profile.first_name} {profile.last_name}
               </h3>
               <div className="flex flex-wrap items-center gap-4 mt-2">
@@ -231,7 +227,7 @@ export default function GraduateProfile() {
 
           {/* Description */}
           <div className="mb-8 p-5 rounded-2xl" style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border-color)' }}>
-            <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Perfil Profesional</h4>
+            <h4 className="label-upper mb-2">Perfil Profesional</h4>
             <p className="text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               {profile.profile_summary || 'No has añadido un resumen profesional a tu perfil. Agrega uno para destacar ante las empresas.'}
             </p>
@@ -242,21 +238,21 @@ export default function GraduateProfile() {
             <div className="flex flex-col gap-1 p-4 rounded-xl transition-colors hover:bg-[var(--bg-muted)] border" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <Mail className="w-4 h-4 text-blue-500" />
-                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Correo Electrónico</p>
+                <p className="label-upper">Correo Electrónico</p>
               </div>
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{user?.email}</p>
             </div>
             <div className="flex flex-col gap-1 p-4 rounded-xl transition-colors hover:bg-[var(--bg-muted)] border" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <UserCircle className="w-4 h-4 text-blue-500" />
-                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Teléfono</p>
+                <p className="label-upper">Teléfono</p>
               </div>
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{profile.phone || 'No especificado'}</p>
             </div>
             <div className="flex flex-col gap-1 p-4 rounded-xl transition-colors hover:bg-[var(--bg-muted)] border" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <Award className="w-4 h-4 text-blue-500" />
-                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Año de Grado</p>
+                <p className="label-upper">Año de Grado</p>
               </div>
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-main)' }}>{profile.graduation_year}</p>
             </div>

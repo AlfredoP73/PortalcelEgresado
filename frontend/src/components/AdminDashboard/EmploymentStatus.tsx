@@ -15,7 +15,8 @@ import {
   type DashboardData,
 } from '../../api/dashboardServices'
 
-export function EmploymentStatus() {
+interface Props { programId?: number; year?: number; }
+export function EmploymentStatus({ programId, year }: Props) {
   const [data, setData] = useState<
     DashboardData['application_status']
   >([])
@@ -25,7 +26,7 @@ export function EmploymentStatus() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const dashboard = await getDashboard()
+        setLoading(true); const dashboard = await getDashboard(programId, year)
 
         setData(dashboard.application_status)
       } catch (error) {
@@ -36,7 +37,7 @@ export function EmploymentStatus() {
     }
 
     loadDashboard()
-  }, [])
+  }, [programId, year])
 
   const total = useMemo(
     () =>

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from app.graduates.controllers.graduate_controller import router as graduate_router
+from app.graduates.controllers.graduate_controller import router as graduate_router, public_router as graduate_public_router
 from app.graduates.controllers.experience_controller import router as experience_router
 from app.graduates.controllers.education_controller import router as education_router
 from app.graduates.controllers.misc_controller import router as misc_router
@@ -25,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(graduate_router)
+app.include_router(graduate_public_router)
 app.include_router(experience_router)
 app.include_router(education_router)
 app.include_router(misc_router)

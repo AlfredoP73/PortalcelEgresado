@@ -23,6 +23,7 @@ services:
   auth:
     build:
       context: ./backend
+      dockerfile: ./app/auth/Dockerfile
     container_name: portaldel_egresado_auth
     command: uvicorn app.auth.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
@@ -36,12 +37,13 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      - ./backend/app:/app/app
 
   # ── Microservicio 2: Empresas y Vacantes (puerto 8001) ───────────────────
   companies:
     build:
       context: ./backend
+      dockerfile: ./app/companies/Dockerfile
     container_name: portaldel_egresado_companies
     command: uvicorn app.companies.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
@@ -58,12 +60,13 @@ services:
       auth:
         condition: service_started
     volumes:
-      - ./backend:/app
+      - ./backend/app:/app/app
 
   # ── Microservicio 3: Egresados (puerto 8003) ─────────────────────────────
   graduates:
     build:
       context: ./backend
+      dockerfile: ./app/graduates/Dockerfile
     container_name: portaldel_egresado_graduates
     command: uvicorn app.graduates.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
@@ -74,18 +77,23 @@ services:
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       MATCHMAKING_URL: http://matchmaking:8000
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: cvs
     depends_on:
       db:
         condition: service_healthy
       auth:
         condition: service_started
     volumes:
-      - ./backend:/app
+      - ./backend/app:/app/app
   
   # ── Microservicio 4: Dashboard Administrativo (puerto 8004) ─────────────
   dashboard:
     build:
       context: ./backend
+      dockerfile: ./app/dashboard/Dockerfile
     container_name: portaldel_egresado_dashboard
     command: uvicorn app.dashboard.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
@@ -105,9 +113,9 @@ services:
       graduates:
         condition: service_started
     volumes:
-      - ./backend:/app
-    
-  
+      - ./backend/app:/app/app
+
+  # ── Microservicio 5: Matchmaking (puerto 8005) ───────────────────────────
   matchmaking:
     build:
       context: ./backend
@@ -127,6 +135,20 @@ services:
         condition: service_started
     volumes:
       - ./backend:/app
+
+  # ── MinIO para Almacenamiento de Archivos (S3) ─────────────────────────
+  minio:
+    image: minio/minio
+    container_name: portaldel_egresado_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
   # ── Frontend React (puerto 5176) ─────────────────────────────────────────
   frontend:
     build:
@@ -151,3 +173,4 @@ services:
 
 volumes:
   pgdata:
+  minio_data:
