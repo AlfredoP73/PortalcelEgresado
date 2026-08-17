@@ -1,39 +1,160 @@
 import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Building2, Briefcase, LayoutDashboard,
-  LogOut, ChevronRight, Sun, Moon, UserCircle, ClipboardList, CheckCircle, Users, FileText, GraduationCap, Search
+  Building2,
+  Briefcase,
+  LayoutDashboard,
+  LogOut,
+  ChevronRight,
+  Sun,
+  Moon,
+  UserCircle,
+  ClipboardList,
+  CheckCircle,
+  Users,
+  FileText,
+  GraduationCap,
+  Search,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
-interface LayoutProps { children: ReactNode }
+interface LayoutProps {
+  children: ReactNode;
+}
 
 const getNavItems = (role: string) => {
   const allItems = [
-    // Module Admin (Only Admin)
-    { name: 'Directorio Egresados', path: '/admin/graduates', icon: Users, roles: ['ADMIN'], section: 'Administración Global' },
-    { name: 'Reporte Postulaciones', path: '/admin/applications', icon: FileText, roles: ['ADMIN'], section: 'Administración Global' },
-    { name: 'Gestión Usuarios', path: '/admin/users', icon: Users, roles: ['ADMIN'], section: 'Administración Global' },
-    { name: 'Sectores', path: '/admin/sectors', icon: LayoutDashboard, roles: ['ADMIN'], section: 'Administración Global' },
-    { name: 'Ciudades', path: '/admin/cities', icon: LayoutDashboard, roles: ['ADMIN'], section: 'Administración Global' },
-    { name: 'Programas', path: '/admin/programs', icon: LayoutDashboard, roles: ['ADMIN'], section: 'Administración Global' },
-    // Module 2: Companies
-    { name: role === 'COMPANY' ? 'Mi Empresa' : 'Directorio Empresas', path: '/companies', icon: Building2, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
-    { name: 'Directorio Egresados', path: '/talent-pool', icon: Users, roles: ['COMPANY'], section: 'Módulo Empresas' },
-    { name: 'Vacantes', path: '/job-offers', icon: Briefcase, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
-    { name: 'Candidatos', path: '/kanban', icon: LayoutDashboard, roles: ['ADMIN', 'COMPANY'], section: 'Módulo Empresas' },
-    // Module 1: Graduates
-    { name: 'Datos Personales', path: '/profile', icon: UserCircle, roles: ['GRADUATE'], section: 'Módulo Egresado' },
-    { name: 'Experiencia Laboral', path: '/experience', icon: Briefcase, roles: ['GRADUATE'], section: 'Módulo Egresado' },
-    { name: 'Historial Académico', path: '/education', icon: GraduationCap, roles: ['GRADUATE'], section: 'Módulo Egresado' },
-    { name: 'Explorar Vacantes', path: '/jobs', icon: Search, roles: ['GRADUATE'], section: 'Empleabilidad' },
-    { name: 'Mis Postulaciones', path: '/applications', icon: CheckCircle, roles: ['GRADUATE'], section: 'Empleabilidad' },
-    { name: 'Seguimiento M01', path: '/surveys', icon: ClipboardList, roles: ['GRADUATE'], section: 'Institucional' },
+    // Module Admin
+    {
+      name: 'Dashboard',
+      path: '/admin/dashboard',
+      icon: LayoutDashboard,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Directorio Egresados',
+      path: '/admin/graduates',
+      icon: Users,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Reporte Postulaciones',
+      path: '/admin/applications',
+      icon: FileText,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Gestión Usuarios',
+      path: '/admin/users',
+      icon: Users,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Sectores',
+      path: '/admin/sectors',
+      icon: LayoutDashboard,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Ciudades',
+      path: '/admin/cities',
+      icon: LayoutDashboard,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Programas',
+      path: '/admin/programs',
+      icon: LayoutDashboard,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+
+    // Module Companies
+    {
+      name: role === 'COMPANY' ? 'Mi Empresa' : 'Directorio Empresas',
+      path: '/companies',
+      icon: Building2,
+      roles: ['ADMIN', 'COMPANY'],
+      section: 'Módulo Empresas',
+    },
+    {
+      name: 'Directorio Egresados',
+      path: '/talent-pool',
+      icon: Users,
+      roles: ['COMPANY'],
+      section: 'Módulo Empresas',
+    },
+    {
+      name: 'Vacantes',
+      path: '/job-offers',
+      icon: Briefcase,
+      roles: ['ADMIN', 'COMPANY'],
+      section: 'Módulo Empresas',
+    },
+    {
+      name: 'Candidatos',
+      path: '/kanban',
+      icon: LayoutDashboard,
+      roles: ['ADMIN', 'COMPANY'],
+      section: 'Módulo Empresas',
+    },
+
+    // Module Graduates
+    {
+      name: 'Datos Personales',
+      path: '/profile',
+      icon: UserCircle,
+      roles: ['GRADUATE'],
+      section: 'Módulo Egresado',
+    },
+    {
+      name: 'Experiencia Laboral',
+      path: '/experience',
+      icon: Briefcase,
+      roles: ['GRADUATE'],
+      section: 'Módulo Egresado',
+    },
+    {
+      name: 'Historial Académico',
+      path: '/education',
+      icon: GraduationCap,
+      roles: ['GRADUATE'],
+      section: 'Módulo Egresado',
+    },
+    {
+      name: 'Explorar Vacantes',
+      path: '/jobs',
+      icon: Search,
+      roles: ['GRADUATE'],
+      section: 'Empleabilidad',
+    },
+    {
+      name: 'Mis Postulaciones',
+      path: '/applications',
+      icon: CheckCircle,
+      roles: ['GRADUATE'],
+      section: 'Empleabilidad',
+    },
+    {
+      name: 'Seguimiento M01',
+      path: '/surveys',
+      icon: ClipboardList,
+      roles: ['GRADUATE'],
+      section: 'Institucional',
+    },
   ];
-  return allItems.filter(item => item.roles.includes(role));
+
+  return allItems.filter((item) => item.roles.includes(role));
 };
 
 const pageTitles: Record<string, string> = {
+  '/admin/dashboard': 'Dashboard Administrativo',
   '/companies': 'Directorio de Empresas',
   '/job-offers': 'Ofertas Laborales',
   '/kanban': 'Gestión de Candidatos',
@@ -61,6 +182,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const rawUser = localStorage.getItem('user');
   const user = rawUser ? JSON.parse(rawUser) : null;
+
   const roleName = user?.role_name || '';
   const navItems = getNavItems(roleName);
 
@@ -68,149 +190,499 @@ export default function Layout({ children }: LayoutProps) {
     localStorage.removeItem('access_token');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('user');
+
     navigate('/login', { replace: true });
   };
 
   const isImpersonating = !!localStorage.getItem('adminToken');
+
   const handleReturnToAdmin = () => {
     const originalToken = localStorage.getItem('adminToken');
     const originalUser = localStorage.getItem('adminUser');
+
     if (originalToken && originalUser) {
       localStorage.setItem('access_token', originalToken);
       localStorage.setItem('user', originalUser);
+
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
-      // Forzar recarga limpia para resetear el usuario en App.tsx
+
       window.location.href = '/admin/graduates';
     }
   };
 
-  const currentTitle = pageTitles[location.pathname]
-    ?? (roleName === 'COMPANY' ? 'Portal Empresa' : roleName === 'GRADUATE' ? 'Portal Egresado' : 'Portal Administrativo');
+  const currentTitle =
+    pageTitles[location.pathname] ??
+    (roleName === 'COMPANY'
+      ? 'Portal Empresa'
+      : roleName === 'GRADUATE'
+        ? 'Portal Egresado'
+        : 'Portal Administrativo');
 
   return (
-    <div className="min-h-screen flex font-sans" style={{ backgroundColor: 'var(--bg-main)' }}>
-      {/* ── Sidebar ── */}
+    <div
+      className="h-screen flex font-sans" 
+      style={{
+        backgroundColor: 'var(--bg-main)',
+      }}
+    >
+
+      {/* =========================================================
+          SIDEBAR FIJO
+          ========================================================= */}
       <aside
-        className="w-[252px] flex flex-col flex-shrink-0 z-20 relative overflow-hidden transition-colors duration-300"
-        style={{ backgroundColor: 'var(--bg-sidebar)' }}
+        className="
+          fixed
+          left-0
+          top-0
+          bottom-0
+          w-[252px]
+          flex
+          flex-col
+          z-30
+          overflow-hidden
+          transition-colors
+          duration-300
+        "
+        style={{
+          backgroundColor: 'var(--bg-sidebar)',
+        }}
       >
         {/* Subtle glow */}
-        <div className="absolute top-0 left-0 w-full h-28 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, rgba(34,168,110,0.15), transparent)' }} />
+        <div
+          className="absolute top-0 left-0 w-full h-28 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse at top left, rgba(34,168,110,0.15), transparent)',
+          }}
+        />
 
         {/* Logo */}
-        <div className="h-[68px] flex items-center gap-3 px-5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div
+          className="
+            h-[68px]
+            flex
+            items-center
+            gap-3
+            px-5
+            flex-shrink-0
+            relative
+            z-10
+          "
+          style={{
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
           <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-white/10 flex items-center justify-center">
-            <img src="/logo.png" alt="UPC" className="w-8 h-8 object-contain" />
+            <img
+              src="/logo.png"
+              alt="UPC"
+              className="w-8 h-8 object-contain"
+            />
           </div>
+
           <div className="leading-tight min-w-0">
-            <p className="text-white font-bold text-[13px] truncate">Portal Empleo</p>
-            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>Universidad UPC</p>
+            <p className="text-white font-bold text-[13px] truncate">
+              Portal Empleo
+            </p>
+
+            <p
+              className="text-xs truncate"
+              style={{
+                color: 'rgba(255,255,255,0.35)',
+              }}
+            >
+              Universidad UPC
+            </p>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 pt-5 pb-2 space-y-0.5 relative z-10 overflow-y-auto">
+        {/* =====================================================
+            NAVIGATION
+            ===================================================== */}
+        <nav
+          className="
+            flex-1
+            px-3
+            pt-5
+            pb-2
+            space-y-0.5
+            relative
+            z-10
+            overflow-y-auto
+          "
+        >
           {(() => {
             let lastSection = '';
-            return navItems.map(({ name, path, icon: Icon, section }) => {
-              const active = location.pathname === path.split('?')[0];
-              const showSection = section !== lastSection;
-              lastSection = section || '';
-              return (
-                <div key={path}>
-                  {showSection && section && (
-                    <p className="text-[10px] font-bold uppercase px-3 mb-3 mt-4 first:mt-0" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>
-                      {section}
-                    </p>
-                  )}
-                  <Link
-                    to={path}
-                    className={twMerge(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 group relative',
-                      active
-                        ? 'text-white'
-                        : 'hover:text-white'
+
+            return navItems.map(
+              ({ name, path, icon: Icon, section }) => {
+                const active =
+                  location.pathname === path.split('?')[0];
+
+                const showSection = section !== lastSection;
+
+                lastSection = section || '';
+
+                return (
+                  <div key={path}>
+                    {showSection && section && (
+                      <p
+                        className="
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          px-3
+                          mb-3
+                          mt-4
+                          first:mt-0
+                        "
+                        style={{
+                          color: 'rgba(255,255,255,0.3)',
+                          letterSpacing: '0.15em',
+                        }}
+                      >
+                        {section}
+                      </p>
                     )}
-                    style={{
-                      backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                      color: active ? '#fff' : 'rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <Icon className="w-[17px] h-[17px] flex-shrink-0" style={{ color: active ? '#7cdaac' : 'rgba(255,255,255,0.35)' }} />
-                    <span className="flex-1 truncate">{name}</span>
-                    {active && <ChevronRight className="w-3.5 h-3.5 opacity-50" />}
-                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: '#7cdaac' }} />}
-                  </Link>
-                </div>
-              );
-            });
+
+                    <Link
+                      to={path}
+                      className={twMerge(
+                        `
+                        flex
+                        items-center
+                        gap-3
+                        px-3
+                        py-2.5
+                        rounded-xl
+                        text-[13px]
+                        font-semibold
+                        transition-all
+                        duration-200
+                        group
+                        relative
+                        `,
+                        active
+                          ? 'text-white'
+                          : 'hover:text-white'
+                      )}
+                      style={{
+                        backgroundColor: active
+                          ? 'rgba(255,255,255,0.1)'
+                          : 'transparent',
+
+                        color: active
+                          ? '#fff'
+                          : 'rgba(255,255,255,0.5)',
+                      }}
+                    >
+                      <Icon
+                        className="
+                          w-[17px]
+                          h-[17px]
+                          flex-shrink-0
+                        "
+                        style={{
+                          color: active
+                            ? '#7cdaac'
+                            : 'rgba(255,255,255,0.35)',
+                        }}
+                      />
+
+                      <span className="flex-1 truncate">
+                        {name}
+                      </span>
+
+                      {active && (
+                        <ChevronRight
+                          className="
+                            w-3.5
+                            h-3.5
+                            opacity-50
+                          "
+                        />
+                      )}
+
+                      {active && (
+                        <div
+                          className="
+                            absolute
+                            left-0
+                            top-1/2
+                            -translate-y-1/2
+                            w-[3px]
+                            h-5
+                            rounded-r-full
+                          "
+                          style={{
+                            backgroundColor: '#7cdaac',
+                          }}
+                        />
+                      )}
+                    </Link>
+                  </div>
+                );
+              }
+            );
           })()}
         </nav>
 
-        {/* User footer */}
-        <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl mb-2" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #158a58, #22a86e)' }}>
-              {user?.email?.[0]?.toUpperCase() ?? <UserCircle className="w-4 h-4" />}
+        {/* =====================================================
+            USER FOOTER
+            ===================================================== */}
+        <div
+          className="p-3 flex-shrink-0"
+          style={{
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <div
+            className="
+              flex
+              items-center
+              gap-2.5
+              px-2.5
+              py-2
+              rounded-xl
+              mb-2
+            "
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.2)',
+            }}
+          >
+            <div
+              className="
+                w-8
+                h-8
+                rounded-lg
+                flex
+                items-center
+                justify-center
+                text-white
+                text-sm
+                font-bold
+                flex-shrink-0
+              "
+              style={{
+                background:
+                  'linear-gradient(135deg, #158a58, #22a86e)',
+              }}
+            >
+              {user?.email?.[0]?.toUpperCase() ?? (
+                <UserCircle className="w-4 h-4" />
+              )}
             </div>
+
             <div className="flex-1 min-w-0">
-              <p className="text-white text-[12px] font-semibold truncate">{user?.email ?? 'Usuario'}</p>
-              <p className="text-[10px] font-semibold uppercase" style={{ color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}>{roleName}</p>
+              <p className="text-white text-[12px] font-semibold truncate">
+                {user?.email ?? 'Usuario'}
+              </p>
+
+              <p
+                className="
+                  text-[10px]
+                  font-semibold
+                  uppercase
+                "
+                style={{
+                  color: 'rgba(255,255,255,0.35)',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {roleName}
+              </p>
             </div>
           </div>
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold transition-all group"
-            style={{ color: 'rgba(252,165,165,0.7)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            className="
+              w-full
+              flex
+              items-center
+              justify-center
+              gap-2
+              px-4
+              py-2
+              rounded-xl
+              text-[12px]
+              font-semibold
+              transition-all
+              group
+            "
+            style={{
+              color: 'rgba(252,165,165,0.7)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor =
+                'rgba(239,68,68,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor =
+                'transparent';
+            }}
           >
             <LogOut className="w-3.5 h-3.5" />
+
             Cerrar Sesión
           </button>
         </div>
       </aside>
 
-      {/* ── Main ── */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden relative transition-colors duration-300" style={{ backgroundColor: 'var(--bg-main)' }}>
+      {/* =========================================================
+          CONTENIDO PRINCIPAL
+          ========================================================= */}
+      <div
+        className="
+          ml-[252px]
+          flex-1
+          flex
+          flex-col
+          h-screen   
+          overflow-hidden
+          relative
+          transition-colors
+          duration-300
+        "
+        style={{
+          backgroundColor: 'var(--bg-main)',
+        }}
+      >
         {/* Background pattern */}
-        <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--pattern-dot) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div
+          className="
+            fixed
+            inset-0
+            pointer-events-none
+            z-0
+          "
+          style={{
+            left: '252px',
+            backgroundImage:
+              'radial-gradient(var(--pattern-dot) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
 
+        {/* =====================================================
+            IMPERSONATION
+            ===================================================== */}
         {isImpersonating && (
-          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-sm font-bold flex items-center justify-between shadow-sm relative z-20">
-            <span>Estás actuando en nombre de este usuario. Tienes todos sus permisos.</span>
-            <button onClick={handleReturnToAdmin} className="bg-yellow-200 hover:bg-yellow-300 px-3 py-1 rounded text-yellow-900 transition-colors">
+          <div
+            className="
+              bg-yellow-100
+              text-yellow-800
+              px-4
+              py-2
+              text-sm
+              font-bold
+              flex
+              items-center
+              justify-between
+              shadow-sm
+              relative
+              z-20
+              flex-shrink-0
+            "
+          >
+            <span>
+              Estás actuando en nombre de este usuario.
+              Tienes todos sus permisos.
+            </span>
+
+            <button
+              onClick={handleReturnToAdmin}
+              className="
+                bg-yellow-200
+                hover:bg-yellow-300
+                px-3
+                py-1
+                rounded
+                text-yellow-900
+                transition-colors
+              "
+            >
               Volver a Administrador
             </button>
           </div>
         )}
 
-        {/* Header */}
-        <header
-          className="h-[64px] backdrop-blur-xl flex items-center px-8 gap-4 flex-shrink-0 z-10 sticky top-0 transition-colors duration-300"
-          style={{ backgroundColor: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)' }}
-        >
-          <div className="flex-1">
-            <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-main)' }}>{currentTitle}</h1>
-          </div>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-lg transition-all duration-200"
+        {/* =====================================================
+            HEADER FIJO
+            ===================================================== */}
+          <header
+            className="
+              h-[64px]
+              flex
+              items-center
+              px-8
+              gap-4
+              flex-shrink-0
+              z-20
+              transition-colors
+              duration-300
+            "
             style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-header)',
+              borderBottom: '1px solid var(--border-color)',
             }}
-            title={darkMode ? 'Modo claro' : 'Modo oscuro'}
           >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-        </header>
+            <div className="flex-1">
+              <h1
+                className="text-lg font-bold tracking-tight"
+                style={{
+                  color: 'var(--text-main)',
+                }}
+              >
+                {currentTitle}
+              </h1>
+            </div>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto p-8 relative z-0">
-          <div className="max-w-7xl mx-auto animate-fade-in">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="
+                p-2
+                rounded-lg
+                transition-all
+                duration-200
+              "
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
+              }}
+              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {darkMode ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+            </button>
+          </header>
+
+        {/* =====================================================
+            PAGE CONTENT
+            ===================================================== */}
+        <main
+          className="
+            flex-1
+            overflow-y-auto
+            overflow-x-hidden
+            p-8
+            relative
+            z-10
+          "
+        >
+          <div
+            className="
+              max-w-7xl
+              mx-auto
+              animate-fade-in
+              pb-10
+            "
+          >
             {children}
           </div>
         </main>

@@ -48,6 +48,13 @@
   --btn-ghost-bg: transparent;
   --btn-ghost-hover: #eef9f4;
   --shadow-btn: 0 4px 14px rgba(21, 138, 88, 0.28);
+  
+  /* Dashboard / Charts */
+  --chart-1: #22a86e;
+  --chart-2: #45c388;
+  --chart-3: #7cdaac;
+  --chart-4: #158a58;
+  --chart-5: #116e48;
 }
 
 /* ── CSS custom props (dark) ── */
