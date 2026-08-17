@@ -1,13 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Users, TrendingUp, DollarSign, Clock } from 'lucide-react'
 
 import {
   getDashboard,
   type DashboardData,
 } from '../../api/dashboardServices'
 
-export function KpiGrid() {
+interface Props {
+  programId?: number;
+  year?: number;
+}
+
+const KPI_ICONS = [
+  Users,
+  TrendingUp,
+  DollarSign,
+  Clock,
+]
+
+export function KpiGrid({ programId, year }: Props) {
   const [data, setData] =
     useState<DashboardData['summary'] | null>(null)
 
@@ -16,7 +29,8 @@ export function KpiGrid() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const dashboard = await getDashboard()
+        setLoading(true)
+        const dashboard = await getDashboard(programId, year)
 
         setData(dashboard.summary)
       } catch (error) {
@@ -27,7 +41,7 @@ export function KpiGrid() {
     }
 
     loadDashboard()
-  }, [])
+  }, [programId, year])
 
   const cards = [
     {
@@ -65,26 +79,33 @@ export function KpiGrid() {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card) => (
-        <div
-          key={card.title}
-          className="card p-5"
-        >
-          <p className="text-sm font-medium text-ink-secondary">
-            {card.title}
-          </p>
+      {cards.map((card, idx) => {
+        const Icon = KPI_ICONS[idx]
+        return (
+          <div
+            key={card.title}
+            className="card p-6"
+          >
+            <div className="flex items-start justify-between">
+              <p className="label-upper">{card.title}</p>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: '#dcfce7' }}>
+                <Icon className="w-5 h-5" style={{ color: '#15803d' }} />
+              </span>
+            </div>
 
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-            {loading ? '...' : card.value}
-          </p>
+            <p className="kpi-value mt-3">
+              {loading ? '...' : card.value}
+            </p>
 
-          <p className="mt-2 text-xs text-ink-tertiary">
-            {card.description}
-          </p>
-        </div>
-      ))}
+            <p className="mt-2 text-xs text-ink-tertiary">
+              {card.description}
+            </p>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 export default KpiGrid
+

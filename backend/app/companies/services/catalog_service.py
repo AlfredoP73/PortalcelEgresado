@@ -12,6 +12,16 @@ def create_sector(sector: schemas.SectorCreate, db: Session):
     db.refresh(db_sector)
     return db_sector
 
+def update_sector(sector_id: int, sector: schemas.SectorUpdate, db: Session):
+    db_sector = db.query(models.Sector).filter(models.Sector.id == sector_id).first()
+    if not db_sector:
+        raise HTTPException(status_code=404, detail="Sector not found")
+    for key, value in sector.model_dump().items():
+        setattr(db_sector, key, value)
+    db.commit()
+    db.refresh(db_sector)
+    return db_sector
+
 def delete_sector(sector_id: int, db: Session):
     db_sector = db.query(models.Sector).filter(models.Sector.id == sector_id).first()
     if not db_sector:
@@ -30,6 +40,16 @@ def create_city(city: schemas.CityCreate, db: Session):
     db.refresh(db_city)
     return db_city
 
+def update_city(city_id: int, city: schemas.CityUpdate, db: Session):
+    db_city = db.query(models.City).filter(models.City.id == city_id).first()
+    if not db_city:
+        raise HTTPException(status_code=404, detail="City not found")
+    for key, value in city.model_dump().items():
+        setattr(db_city, key, value)
+    db.commit()
+    db.refresh(db_city)
+    return db_city
+
 def delete_city(city_id: int, db: Session):
     db_city = db.query(models.City).filter(models.City.id == city_id).first()
     if not db_city:
@@ -44,6 +64,16 @@ def get_programs(db: Session):
 def create_program(program: schemas.ProgramCreate, db: Session):
     db_program = models.Program(**program.model_dump())
     db.add(db_program)
+    db.commit()
+    db.refresh(db_program)
+    return db_program
+
+def update_program(program_id: int, program: schemas.ProgramUpdate, db: Session):
+    db_program = db.query(models.Program).filter(models.Program.id == program_id).first()
+    if not db_program:
+        raise HTTPException(status_code=404, detail="Program not found")
+    for key, value in program.model_dump().items():
+        setattr(db_program, key, value)
     db.commit()
     db.refresh(db_program)
     return db_program

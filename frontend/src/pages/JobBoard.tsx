@@ -157,7 +157,7 @@ export default function JobBoard() {
       {/* Details Modal */}
       {selectedJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="w-full max-w-3xl max-h-full flex flex-col rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
+          <div className="w-full max-w-6xl max-h-full flex flex-col rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
             <div className="p-6 border-b border-brand-100 dark:border-gray-800 flex justify-between items-center bg-brand-50 dark:bg-gray-900/30">
               <h3 className="text-2xl font-bold font-heading text-ink">{selectedJob.title}</h3>
               <button onClick={() => setSelectedJob(null)} className="text-ink-tertiary hover:text-ink transition-colors p-2 hover:bg-black/5 rounded-full">

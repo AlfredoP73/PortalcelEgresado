@@ -4,6 +4,7 @@ import uuid
 import os
 import shutil
 from app.graduates import models, schemas
+from app.graduates.services.graduate_service import s3_client, MINIO_BUCKET_NAME
 
 def add_academic_history(history: schemas.AcademicHistoryCreate, current_user: dict, db: Session):
     db_hist = models.AcademicHistory(**history.model_dump(), graduate_id=current_user["id"])
@@ -28,11 +29,17 @@ def upload_education_diploma(edu_id: int, file: UploadFile, current_user: dict, 
         raise HTTPException(status_code=400, detail="El archivo debe ser PDF")
         
     filename = f"{uuid.uuid4()}_{file.filename}"
-    filepath = os.path.join("uploads", "cvs", filename)
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    
+    try:
+        s3_client.upload_fileobj(
+            file.file,
+            MINIO_BUCKET_NAME,
+            filename,
+            ExtraArgs={"ContentType": "application/pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir el diploma a MinIO: {str(e)}")
         
-    db_edu.diploma_url = f"/uploads/cvs/{filename}"
+    db_edu.diploma_url = f"/api/modulo1/files/{filename}"
     db.commit()
     return {"message": "Diploma subido exitosamente", "diploma_url": db_edu.diploma_url}

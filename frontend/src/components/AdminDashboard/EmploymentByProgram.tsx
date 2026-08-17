@@ -32,7 +32,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function EmploymentByProgram() {
+interface Props { programId?: number; year?: number; }
+export function EmploymentByProgram({ programId, year }: Props) {
   const [data, setData] = useState<
     DashboardData['employment_by_program']
   >([])
@@ -45,7 +46,7 @@ export function EmploymentByProgram() {
       try {
         setLoading(true)
 
-        const dashboard = await getDashboard()
+        setLoading(true); const dashboard = await getDashboard(programId, year)
 
         setData(dashboard.employment_by_program)
       } catch (err) {
@@ -57,7 +58,7 @@ export function EmploymentByProgram() {
     }
 
     loadDashboard()
-  }, [])
+  }, [programId, year])
 
   if (loading) {
     return (

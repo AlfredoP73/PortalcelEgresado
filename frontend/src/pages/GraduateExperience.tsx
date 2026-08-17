@@ -182,7 +182,7 @@ export default function GraduateExperience() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-lg rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
+          <div className="w-full max-w-3xl rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
             <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: 'var(--border-color)' }}>
               <h3 className="text-xl font-bold text-ink">Agregar Experiencia Laboral</h3>
               <button onClick={() => setShowModal(false)} className="text-ink-tertiary hover:text-ink p-1 rounded-full hover:bg-black/5"><X className="w-5 h-5" /></button>

@@ -88,14 +88,16 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-ink font-heading">Gestión de Usuarios</h2>
-          <p className="text-sm mt-0.5 text-ink-secondary">Administra todos los accesos al sistema.</p>
+      <div className="page-header">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="page-title">Gestión de Usuarios</h2>
+            <p className="text-sm mt-1 text-ink-secondary">Administra todos los accesos al sistema.</p>
+          </div>
+          <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Nuevo Usuario
+          </button>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nuevo Usuario
-        </button>
       </div>
 
       {showForm && (
