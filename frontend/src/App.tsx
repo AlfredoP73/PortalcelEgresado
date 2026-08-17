@@ -20,13 +20,17 @@ import AdminPrograms from './pages/AdminPrograms';
 import AdminUsers from './pages/AdminUsers';
 import CompanyTalentPool from './pages/CompanyTalentPool';
 import AdminDashboard from './pages/AdminDashboard';
+import CompanyDashboard from './pages/CompanyDashboard';
+import GraduateDashboard from './pages/GraduateDashboard';
 
 const HomeRedirect = () => {
   const rawUser = localStorage.getItem('user');
   if (!rawUser) return <Navigate to="/login" replace />;
   const user = JSON.parse(rawUser);
-  if (user.role_name === 'GRADUATE') return <Navigate to="/profile" replace />;
-  return <Navigate to="/companies" replace />;
+  if (user.role_name === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
+  if (user.role_name === 'COMPANY') return <Navigate to="/company/dashboard" replace />;
+  if (user.role_name === 'GRADUATE') return <Navigate to="/graduate/dashboard" replace />;
+  return <Navigate to="/login" replace />;
 };
 
 export default function App() {
@@ -50,6 +54,10 @@ export default function App() {
           <Route
             path="/companies"
             element={<Layout><Companies /></Layout>}
+          />
+          <Route
+            path="/company/dashboard"
+            element={<Layout><CompanyDashboard /></Layout>}
           />
           <Route
             path="/talent-pool"
@@ -91,6 +99,10 @@ export default function App() {
 
         {/* Privadas — Módulo 1 (Egresados) */}
         <Route element={<ProtectedRoute allowedRoles={['GRADUATE', 'ADMIN']} />}>
+          <Route
+            path="/graduate/dashboard"
+            element={<Layout><GraduateDashboard /></Layout>}
+          />
           <Route
             path="/profile"
             element={<Layout><GraduateProfile /></Layout>}

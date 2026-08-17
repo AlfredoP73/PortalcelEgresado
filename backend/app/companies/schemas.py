@@ -10,6 +10,9 @@ class SectorBase(BaseModel):
 class SectorCreate(SectorBase):
     pass
 
+class SectorUpdate(SectorBase):
+    pass
+
 class Sector(SectorBase):
     id: int
     class Config:
@@ -21,6 +24,9 @@ class CityBase(BaseModel):
 class CityCreate(CityBase):
     pass
 
+class CityUpdate(CityBase):
+    pass
+
 class City(CityBase):
     id: int
     class Config:
@@ -30,6 +36,9 @@ class ProgramBase(BaseModel):
     name: str
 
 class ProgramCreate(ProgramBase):
+    pass
+
+class ProgramUpdate(ProgramBase):
     pass
 
 class Program(ProgramBase):

@@ -77,7 +77,14 @@ const getNavItems = (role: string) => {
 
     // Module Companies
     {
-      name: role === 'COMPANY' ? 'Mi Empresa' : 'Directorio Empresas',
+      name: 'Dashboard',
+      path: '/company/dashboard',
+      icon: LayoutDashboard,
+      roles: ['COMPANY'],
+      section: 'Módulo Empresas',
+    },
+    {
+      name: role === 'COMPANY' ? 'Mi Perfil Empresarial' : 'Directorio Empresas',
       path: '/companies',
       icon: Building2,
       roles: ['ADMIN', 'COMPANY'],
@@ -106,6 +113,13 @@ const getNavItems = (role: string) => {
     },
 
     // Module Graduates
+    {
+      name: 'Dashboard',
+      path: '/graduate/dashboard',
+      icon: LayoutDashboard,
+      roles: ['GRADUATE'],
+      section: 'Módulo Egresado',
+    },
     {
       name: 'Datos Personales',
       path: '/profile',
@@ -155,6 +169,8 @@ const getNavItems = (role: string) => {
 
 const pageTitles: Record<string, string> = {
   '/admin/dashboard': 'Dashboard Administrativo',
+  '/company/dashboard': 'Dashboard Empresa',
+  '/graduate/dashboard': 'Dashboard Egresado',
   '/companies': 'Directorio de Empresas',
   '/job-offers': 'Ofertas Laborales',
   '/kanban': 'Gestión de Candidatos',
@@ -306,7 +322,7 @@ export default function Layout({ children }: LayoutProps) {
             px-3
             pt-5
             pb-2
-            space-y-0.5
+            space-y-1
             relative
             z-10
             overflow-y-auto
@@ -338,7 +354,7 @@ export default function Layout({ children }: LayoutProps) {
                           first:mt-0
                         "
                         style={{
-                          color: 'rgba(255,255,255,0.3)',
+                          color: 'rgba(255,255,255,0.45)',
                           letterSpacing: '0.15em',
                         }}
                       >
@@ -434,7 +450,7 @@ export default function Layout({ children }: LayoutProps) {
         <div
           className="p-3 flex-shrink-0"
           style={{
-            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
           }}
         >
           <div
@@ -630,7 +646,7 @@ export default function Layout({ children }: LayoutProps) {
           >
             <div className="flex-1">
               <h1
-                className="text-lg font-bold tracking-tight"
+                className="text-sm font-medium"
                 style={{
                   color: 'var(--text-main)',
                 }}
@@ -677,7 +693,7 @@ export default function Layout({ children }: LayoutProps) {
         >
           <div
             className="
-              max-w-7xl
+              w-full max-w-[1800px]
               mx-auto
               animate-fade-in
               pb-10

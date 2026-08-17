@@ -127,8 +127,8 @@ export default function Login() {
             </div>
 
             {/* ── Right panel: form ── */}
-            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative" style={{ backgroundColor: 'var(--color-surface-soft)' }}>
-                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(var(--color-pattern) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative bg-[var(--bg-main)]">
+                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(var(--border-color) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
 
                 <div className="w-full max-w-[400px] relative z-10">
                     {/* Mobile logo */}

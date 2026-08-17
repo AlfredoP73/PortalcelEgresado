@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -14,6 +15,11 @@ router = APIRouter(
     prefix="/api/modulo1",
     tags=["Perfil de Egresado"],
     dependencies=[Depends(get_current_user)]
+)
+
+public_router = APIRouter(
+    prefix="/api/modulo1",
+    tags=["Perfil de Egresado (Público)"]
 )
 
 @router.post("/admin/graduates", response_model=schemas.Graduate, dependencies=[Depends(require_admin)])
@@ -47,3 +53,11 @@ def add_certification(cert: schemas.CertificationCreate, db: Session = Depends(g
 @router.delete("/certifications/{cert_id}")
 def delete_certification(cert_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.delete_certification(cert_id, current_user, db)
+
+@public_router.get("/files/{filename}")
+def get_file(filename: str):
+    try:
+        response = graduate_service.s3_client.get_object(Bucket=graduate_service.MINIO_BUCKET_NAME, Key=filename)
+        return StreamingResponse(response['Body'].iter_chunks(), media_type="application/pdf")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")

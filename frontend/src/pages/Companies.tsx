@@ -140,7 +140,7 @@ export default function Companies() {
     if (!myCompany) {
       if (isCreating) {
         return (
-          <div className="max-w-2xl mx-auto mt-10">
+          <div className="max-w-5xl mx-auto mt-10">
             <h2 className="text-2xl font-bold font-heading text-ink mb-6">Completar Perfil de Empresa</h2>
             <form onSubmit={handleCreateCompany} className="card p-8 space-y-5">
               <div>
@@ -181,7 +181,7 @@ export default function Companies() {
       }
 
       return (
-        <div className="card p-10 text-center max-w-2xl mx-auto mt-10 relative overflow-hidden group">
+        <div className="card p-10 text-center max-w-5xl mx-auto mt-10 relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-50 to-white -z-10" />
           <div className="w-20 h-20 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
             <Building2 className="w-10 h-10" />
@@ -336,7 +336,7 @@ export default function Companies() {
 
       {adminModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in">
-          <div className="modal-content rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
+          <div className="modal-content rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-scale-in" style={{ backgroundColor: 'var(--bg-modal)', border: '1px solid var(--border-color)' }}>
             <div className="flex justify-between items-center p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <h3 className="text-xl font-bold text-ink font-heading">
                 {editingCompany ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
