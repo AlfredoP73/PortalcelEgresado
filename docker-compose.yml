@@ -51,6 +51,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      MATCHMAKING_URL: http://matchmaking:8000
     depends_on:
       db:
         condition: service_healthy
@@ -72,6 +73,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      MATCHMAKING_URL: http://matchmaking:8000
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +106,27 @@ services:
         condition: service_started
     volumes:
       - ./backend:/app
+    
+  
+  matchmaking:
+    build:
+      context: ./backend
+    container_name: portaldel_egresado_matchmaking
+    command: uvicorn app.matchmaking.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8005:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_started
+    volumes:
+      - ./backend:/app
   # ── Frontend React (puerto 5176) ─────────────────────────────────────────
   frontend:
     build:
@@ -116,10 +139,12 @@ services:
       VITE_COMPANIES_URL: http://localhost:8001
       VITE_GRADUATES_URL: http://localhost:8003
       VITE_DASHBOARD_URL: http://localhost:8004
+      VITE_MATCHMAKING_URL: http://localhost:8005
     depends_on:
       - auth
       - companies
       - graduates
+      - matchmaking
     volumes:
       - ./frontend:/app
       - /app/node_modules
