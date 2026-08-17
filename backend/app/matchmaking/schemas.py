@@ -54,6 +54,8 @@ class NotificationOut(BaseModel):
     score: Decimal
     is_read: bool
     sent_at: datetime
+    job_title: Optional[str] = None
+    company_name: Optional[str] = None
 
 
 # ── Habilidades requeridas por vacante ───────────────────────────────────
