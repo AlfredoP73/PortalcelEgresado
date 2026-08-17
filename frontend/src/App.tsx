@@ -19,6 +19,7 @@ import AdminCities from './pages/AdminCities';
 import AdminPrograms from './pages/AdminPrograms';
 import AdminUsers from './pages/AdminUsers';
 import CompanyTalentPool from './pages/CompanyTalentPool';
+import AdminDashboard from './pages/AdminDashboard';
 
 const HomeRedirect = () => {
   const rawUser = localStorage.getItem('user');
@@ -35,6 +36,14 @@ export default function App() {
       <Routes>
         {/* Pública */}
         <Route path="/login" element={<Login />} />
+
+        {/* Solo ADMIN */}
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route
+            path="/admin/dashboard"
+            element={<Layout><AdminDashboard /></Layout>}
+          />
+        </Route>
 
         {/* Privadas — Módulo 2 (Empresas y Administrador) */}
         <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COMPANY']} />}>
