@@ -13,6 +13,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/migration_matchmaking.sql:/docker-entrypoint-initdb.d/migration_matchmaking.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -53,6 +54,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      MATCHMAKING_URL: http://matchmaking:8000
+      MATCHMAKING_INTERNAL_TOKEN: ${MATCHMAKING_INTERNAL_TOKEN:-token_interno_servicios}
     depends_on:
       db:
         condition: service_healthy
@@ -75,6 +78,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      MATCHMAKING_URL: http://matchmaking:8000
+      MATCHMAKING_INTERNAL_TOKEN: ${MATCHMAKING_INTERNAL_TOKEN:-token_interno_servicios}
       MINIO_URL: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -113,6 +118,29 @@ services:
     volumes:
       - ./backend/app:/app/app
 
+  # ── Microservicio 5: Matchmaking (puerto 8005) ───────────────────────────
+  matchmaking:
+    build:
+      context: ./backend
+      dockerfile: ./app/matchmaking/Dockerfile
+    container_name: portaldel_egresado_matchmaking
+    command: uvicorn app.matchmaking.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8005:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      MATCHMAKING_INTERNAL_TOKEN: ${MATCHMAKING_INTERNAL_TOKEN:-token_interno_servicios}
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_started
+    volumes:
+      - ./backend/app:/app/app
+
   # ── MinIO para Almacenamiento de Archivos (S3) ─────────────────────────
   minio:
     image: minio/minio
@@ -138,10 +166,12 @@ services:
       VITE_COMPANIES_URL: http://localhost:8001
       VITE_GRADUATES_URL: http://localhost:8003
       VITE_DASHBOARD_URL: http://localhost:8004
+      VITE_MATCHMAKING_URL: http://localhost:8005
     depends_on:
       - auth
       - companies
       - graduates
+      - matchmaking
     volumes:
       - ./frontend:/app
       - /app/node_modules

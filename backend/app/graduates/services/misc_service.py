@@ -69,4 +69,6 @@ def submit_survey_response(survey_id: int, answers: dict, current_user: dict, db
     db.add(new_response)
     db.commit()
     db.refresh(new_response)
+    from app.matchmaking.client import trigger_recalcular
+    trigger_recalcular(graduate_id=current_user["id"])
     return new_response

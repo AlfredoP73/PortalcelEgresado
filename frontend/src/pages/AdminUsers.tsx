@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { authApi } from '../api';
-import { Users, Search, Plus, Trash2, Mail, ShieldAlert, PlayCircle, Loader2 } from 'lucide-react';
+import { Search, Plus, Mail, ShieldAlert, PlayCircle, Loader2 } from 'lucide-react';
 
 interface User {
   id: number;

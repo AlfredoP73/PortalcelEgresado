@@ -125,7 +125,7 @@ export default function CompanyDashboard() {
                   <YAxis type="category" dataKey="status" stroke="var(--text-secondary)" fontSize={11} tickLine={false} axisLine={false} width={100} />
                   <RechartsTooltip cursor={{ fill: 'var(--bg-hover)' }} contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'var(--text-main)' }} />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={40}>
-                    {hiring_funnel.map((entry, index) => (
+                    {hiring_funnel.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={INDUSTRY_COLORS[index % INDUSTRY_COLORS.length]} />
                     ))}
                     <LabelList dataKey="count" position="right" offset={8} fill="var(--text-secondary)" fontSize={12} />
@@ -179,7 +179,7 @@ export default function CompanyDashboard() {
                  <ResponsiveContainer width="100%" height="100%">
                    <PieChart>
                      <Pie data={applicants_by_program} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="count" nameKey="program">
-                       {applicants_by_program.map((entry, index) => (
+                       {applicants_by_program.map((_entry, index) => (
                          <Cell key={`cell-${index}`} fill={INDUSTRY_COLORS[index % INDUSTRY_COLORS.length]} />
                        ))}
                      </Pie>
@@ -219,7 +219,7 @@ export default function CompanyDashboard() {
                   <YAxis type="category" dataKey="skill" stroke="var(--text-secondary)" fontSize={11} tickLine={false} axisLine={false} width={100} />
                   <RechartsTooltip cursor={{ fill: 'var(--bg-hover)' }} contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'var(--text-main)' }} />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={40}>
-                    {frequent_skills.map((entry, index) => (
+                    {frequent_skills.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={INDUSTRY_COLORS[(index+2) % INDUSTRY_COLORS.length]} />
                     ))}
                   </Bar>

@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
 import api from '../api';
-import { UserCircle, Edit2, GraduationCap, Mail, Award, Plus, Trash2, Upload, FileText, Loader2, X, Save } from 'lucide-react';
+import { UserCircle, Edit2, GraduationCap, Mail, Award, Upload, FileText, Loader2 } from 'lucide-react';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
 

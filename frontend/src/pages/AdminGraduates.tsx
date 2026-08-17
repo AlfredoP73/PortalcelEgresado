@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { graduatesApi, authApi } from '../api';
 import api from '../api';
 import { Users, GraduationCap, Phone, ExternalLink, Plus, X, Save, Loader2, PlayCircle } from 'lucide-react';
-import { twMerge } from 'tailwind-merge';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
 
@@ -80,7 +79,7 @@ export default function AdminGraduates() {
     e.preventDefault();
     setSaving(true);
     const fd = new FormData(e.currentTarget);
-    const data = Object.fromEntries(fd.entries());
+    const data: Record<string, any> = Object.fromEntries(fd.entries());
     data.program_id = Number(data.program_id);
     data.graduation_year = Number(data.graduation_year);
 

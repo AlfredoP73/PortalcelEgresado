@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getGraduateDashboard } from '../api/dashboardServices';
 import type { GraduateDashboardData } from '../api/dashboardServices';
-import { FileText, Users, Eye, Target, RefreshCw } from 'lucide-react';
+import { FileText, Eye, Target, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Legend,
@@ -26,14 +23,6 @@ import {
   RadialBar,
   LabelList,
 } from 'recharts';
-
-const INDUSTRY_COLORS = [
-  'var(--color-brand-500)',
-  'var(--color-brand-400)',
-  'var(--color-brand-300)',
-  'var(--color-brand-600)',
-  'var(--color-brand-700)',
-];
 
 export default function GraduateDashboard() {
   const [data, setData] = useState<GraduateDashboardData | null>(null);

@@ -68,6 +68,8 @@ def create_or_update_profile(profile: schemas.GraduateCreate, current_user: dict
     
     db.commit()
     db.refresh(db_profile)
+    from app.matchmaking.client import trigger_recalcular
+    trigger_recalcular(graduate_id=current_user["id"])
     return db_profile
 
 import boto3

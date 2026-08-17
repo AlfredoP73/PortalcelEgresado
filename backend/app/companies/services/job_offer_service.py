@@ -9,6 +9,8 @@ def create_job_offer(job: schemas.JobOfferCreate, current_user: dict, db: Sessio
     db.add(db_job)
     db.commit()
     db.refresh(db_job)
+    from app.matchmaking.client import trigger_recalcular
+    trigger_recalcular(job_offer_id=db_job.id)
     return db_job
 
 def get_job_offers(skip: int, limit: int, current_user: dict, db: Session):
