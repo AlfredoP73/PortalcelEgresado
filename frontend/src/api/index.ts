@@ -97,4 +97,24 @@ matchmakingApi.interceptors.response.use(
   }
 );
 
+// ── Notificaciones de afinidad (Matchmaking) ─────────────────────────────────
+export interface MatchNotification {
+  id: number;
+  graduate_id: number;
+  job_offer_id: number;
+  score: number;
+  is_read: boolean;
+  sent_at: string;
+  job_title?: string | null;
+  company_name?: string | null;
+}
+
+export const getNotifications = (graduateId: number, soloNoLeidas = false) =>
+  matchmakingApi.get<MatchNotification[]>(`/notifications/${graduateId}`, {
+    params: { solo_no_leidas: soloNoLeidas },
+  });
+
+export const markNotificationRead = (notificationId: number) =>
+  matchmakingApi.patch<MatchNotification>(`/notifications/${notificationId}/leido`);
+
 export default api;

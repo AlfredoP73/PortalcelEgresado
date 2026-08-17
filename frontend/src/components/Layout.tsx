@@ -17,6 +17,7 @@ import {
   Search,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import NotificationsBell from './NotificationsBell';
 
 interface LayoutProps {
   children: ReactNode;
@@ -654,6 +655,8 @@ export default function Layout({ children }: LayoutProps) {
                 {currentTitle}
               </h1>
             </div>
+
+            {roleName === 'GRADUATE' && <NotificationsBell />}
 
             <button
               onClick={() => setDarkMode(!darkMode)}
