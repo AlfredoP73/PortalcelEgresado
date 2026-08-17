@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
-import { graduatesApi } from '../api';
+import { graduatesApi, matchmakingApi } from '../api';
 import { Search, MapPin, Building2, Briefcase, CalendarDays, CheckCircle2, DollarSign } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
@@ -20,8 +20,14 @@ interface JobOffer {
   };
 }
 
+interface MatchOut {
+  job_offer_id: number;
+  score: number;
+}
+
 export default function JobBoard() {
   const [jobs, setJobs] = useState<JobOffer[]>([]);
+  const [matches, setMatches] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobOffer | null>(null);
   const [applying, setApplying] = useState(false);
@@ -29,9 +35,25 @@ export default function JobBoard() {
   const [minSalaryFilter, setMinSalaryFilter] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  const rawUser = localStorage.getItem('user');
+  const user = rawUser ? JSON.parse(rawUser) : null;
+  const graduateId = user?.id;
+
   useEffect(() => {
     fetchJobs();
-  }, []);
+    if (graduateId) {
+      matchmakingApi
+        .get(`/graduate/${graduateId}?limit=200`)
+        .then((res) => {
+          const map: Record<number, number> = {};
+          res.data.forEach((m: MatchOut) => {
+            map[m.job_offer_id] = Number(m.score);
+          });
+          setMatches(map);
+        })
+        .catch((error) => console.error('Error fetching matches:', error));
+    }
+  }, [graduateId]);
 
   const fetchJobs = async () => {
     try {
@@ -124,6 +146,16 @@ export default function JobBoard() {
                   <p className="text-ink-secondary font-medium mt-1 flex items-center gap-1.5">
                     <Building2 className="w-4 h-4" /> {job.company.name}
                   </p>
+                  {matches[job.id] !== undefined && (
+                    <span className={twMerge(
+                      'mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold',
+                      matches[job.id] >= 75 ? 'bg-green-100 text-green-700' :
+                      matches[job.id] >= 50 ? 'bg-amber-100 text-amber-700' :
+                      'bg-gray-100 text-gray-600'
+                    )}>
+                      {Math.round(matches[job.id])}% de afinidad
+                    </span>
+                  )}
                 </div>
                 
                 <div className="space-y-2 mb-6 flex-1">
@@ -157,7 +189,7 @@ export default function JobBoard() {
       {/* Details Modal */}
       {selectedJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="w-full max-w-6xl max-h-full flex flex-col rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl animate-fade-in-up" style={{ backgroundColor: 'var(--bg-modal)' }}>
             <div className="p-6 border-b border-brand-100 dark:border-gray-800 flex justify-between items-center bg-brand-50 dark:bg-gray-900/30">
               <h3 className="text-2xl font-bold font-heading text-ink">{selectedJob.title}</h3>
               <button onClick={() => setSelectedJob(null)} className="text-ink-tertiary hover:text-ink transition-colors p-2 hover:bg-black/5 rounded-full">
@@ -165,7 +197,7 @@ export default function JobBoard() {
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+            <div className="p-6 space-y-6">
               <div className="flex flex-col gap-1">
                 <h4 className="font-bold text-ink text-lg">{selectedJob.company.name}</h4>
                 <p className="text-brand-600 font-medium text-sm">

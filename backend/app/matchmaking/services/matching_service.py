@@ -52,14 +52,62 @@ def _get_graduate_data(db: Session, graduate_id: int) -> Optional[dict]:
         "program_id": row["program_id"],
         "skills": {r["skill_id"]: r["proficiency_level"] for r in skills_rows},
         "total_experience_years": total_years,
+        "survey": _get_survey_context(db, graduate_id),
+    }
+
+
+# ── Encuesta de seguimiento (M01) ─────────────────────────────────────────────
+def _get_survey_context(db: Session, graduate_id: int) -> dict:
+    """Extrae respuestas de la última encuesta del egresado (bonus tie-breaker).
+
+    Localiza las preguntas por palabras clave en el texto de la pregunta, así
+    el algoritmo no depende de ids fijos. Respuestas conocidas:
+      - ¿Se encuentra laborando actualmente?        -> laborando
+      - ¿En qué sector económico se desempeña?       -> sector
+      - ¿Su empleo actual tiene relación con su programa académico? -> relacion_programa
+    """
+    resp = db.execute(
+        text(
+            """SELECT sr.answers_json, s.questions_json
+               FROM survey_responses sr
+               JOIN surveys s ON s.id = sr.survey_id
+               WHERE sr.graduate_id = :gid
+               ORDER BY sr.submitted_at DESC
+               LIMIT 1"""
+        ),
+        {"gid": graduate_id},
+    ).mappings().first()
+    if not resp:
+        return {"laborando": None, "sector": None, "relacion_programa": None}
+
+    answers = resp["answers_json"] or {}
+    questions = resp["questions_json"] or []
+    qid = {}
+    for q in questions:
+        t = str(q.get("question", "")).lower()
+        if "laborando" in t or ("encuentra" in t and "laboral" in t):
+            qid["laborando"] = q.get("id")
+        elif "sector" in t:
+            qid["sector"] = q.get("id")
+        elif "relaci" in t and ("programa" in t or "academico" in t or "académico" in t):
+            qid["relacion_programa"] = q.get("id")
+
+    return {
+        "laborando": answers.get(qid["laborando"]) if qid.get("laborando") else None,
+        "sector": answers.get(qid["sector"]) if qid.get("sector") else None,
+        "relacion_programa": answers.get(qid["relacion_programa"]) if qid.get("relacion_programa") else None,
     }
 
 
 def _get_job_offer_data(db: Session, job_offer_id: int) -> Optional[dict]:
     row = db.execute(
         text(
-            """SELECT id, program_id, min_experience_years, status
-               FROM job_offers WHERE id = :jid"""
+            """SELECT jo.id, jo.program_id, jo.min_experience_years, jo.status,
+                      sec.name AS company_sector
+               FROM job_offers jo
+               JOIN companies co ON co.user_id = jo.company_id
+               LEFT JOIN sectors sec ON sec.id = co.sector_id
+               WHERE jo.id = :jid"""
         ),
         {"jid": job_offer_id},
     ).mappings().first()
@@ -75,14 +123,21 @@ def _get_job_offer_data(db: Session, job_offer_id: int) -> Optional[dict]:
         "program_id": row["program_id"],
         "min_experience_years": row["min_experience_years"] or 0,
         "status": row["status"],
+        "company_sector": row["company_sector"],
         "required_skills": {r["skill_id"]: r["required_level"] for r in skills_rows},
     }
 
 
 # ── Algoritmo puro (fácil de testear unitariamente) ──────────────────────────
 def calcular_afinidad(graduate: dict, job_offer: dict, weights: dict) -> dict:
-    # 1. Programa académico: match exacto = 100, si no = 0
-    program_score = Decimal("100.00") if graduate["program_id"] == job_offer["program_id"] else Decimal("0.00")
+    # 1. Programa académico: match exacto = 100, si no = 0.
+    #    NULL nunca es un match: si alguno de los dos no tiene programa, 0.
+    g_pid = graduate.get("program_id")
+    j_pid = job_offer.get("program_id")
+    if g_pid is not None and j_pid is not None and g_pid == j_pid:
+        program_score = Decimal("100.00")
+    else:
+        program_score = Decimal("0.00")
 
     # 2. Habilidades: porcentaje de las requeridas que el egresado posee (Jaccard sobre lo requerido)
     req_skills = set(job_offer["required_skills"].keys())
@@ -106,12 +161,47 @@ def calcular_afinidad(graduate: dict, job_offer: dict, weights: dict) -> dict:
         + experience_score * Decimal(str(weights["experience_weight"]))
     )
 
+    # Bonus (tie-breaker) por encuesta de seguimiento: ajusta ±pocos puntos
+    survey_bonus = _bonus_encuesta(graduate, job_offer)
+    final_score = min(final_score + survey_bonus, Decimal("100.00"))
+
     return {
         "score": round(final_score, 2),
         "program_score": round(program_score, 2),
         "skills_score": round(skills_score, 2),
         "experience_score": round(experience_score, 2),
+        "survey_bonus": round(survey_bonus, 2),
     }
+
+
+def _bonus_encuesta(graduate: dict, job_offer: dict) -> Decimal:
+    """Puntos de afinidad extra derivados de la Encuesta de Seguimiento (M01).
+
+    Reglas (bonus acumulable, máx ~12 puntos):
+      +4  el egresado NO está laborando (disponible para la vacante)
+      +3  su empleo está totalmente relacionado con su programa académico
+      +1.5 el empleo tiene relación parcial con su programa
+      +5  el sector donde se desempeña coincide con el de la empresa de la vacante
+    """
+    survey = graduate.get("survey") or {}
+    bonus = Decimal("0.00")
+
+    laborando = str(survey.get("laborando") or "").strip().lower()
+    if laborando.startswith("no"):
+        bonus += Decimal("4.00")
+
+    relacion = str(survey.get("relacion_programa") or "").strip().lower()
+    if "total" in relacion or relacion == "sí" or relacion == "si":
+        bonus += Decimal("3.00")
+    elif "parcial" in relacion:
+        bonus += Decimal("1.50")
+
+    sector = str(survey.get("sector") or "").strip().lower()
+    company_sector = str(job_offer.get("company_sector") or "").strip().lower()
+    if sector and company_sector and (sector in company_sector or company_sector in sector):
+        bonus += Decimal("5.00")
+
+    return bonus
 
 
 # ── Persistencia + notificaciones ────────────────────────────────────────────

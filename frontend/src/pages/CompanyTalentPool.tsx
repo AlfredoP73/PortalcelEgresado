@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
-import api from '../api';
+import api, { matchmakingApi } from '../api';
 import { Users, GraduationCap, Phone, ExternalLink, X, FileText, Mail, Briefcase } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
+
+interface JobOffer {
+  id: number;
+  title: string;
+}
+
+interface MatchOut {
+  graduate_id: number;
+  score: number;
+}
 
 interface WorkExperience {
   id: number;
@@ -40,10 +51,45 @@ export default function CompanyTalentPool() {
   const [graduates, setGraduates] = useState<Graduate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGraduate, setSelectedGraduate] = useState<Graduate | null>(null);
+  const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<number | ''>('');
+  const [matches, setMatches] = useState<Record<number, number>>({});
 
   useEffect(() => {
     fetchGraduates();
+    fetchJobOffers();
   }, []);
+
+  useEffect(() => {
+    if (!selectedJobId) {
+      setMatches({});
+      return;
+    }
+    fetchMatches(Number(selectedJobId));
+  }, [selectedJobId]);
+
+  const fetchMatches = async (jobOfferId: number) => {
+    try {
+      const res = await matchmakingApi.get(`/vacancy/${jobOfferId}?limit=200`);
+      const map: Record<number, number> = {};
+      res.data.forEach((m: MatchOut) => {
+        map[m.graduate_id] = Number(m.score);
+      });
+      setMatches(map);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      setMatches({});
+    }
+  };
+
+  const fetchJobOffers = async () => {
+    try {
+      const res = await api.get('/jobs');
+      setJobOffers(res.data);
+    } catch (error) {
+      console.error('Error fetching job offers:', error);
+    }
+  };
 
   const fetchGraduates = async () => {
     try {
@@ -64,6 +110,20 @@ export default function CompanyTalentPool() {
           <h2 className="text-3xl font-bold tracking-tight text-ink font-heading">Directorio de Egresados</h2>
           <p className="text-sm mt-1 text-ink-secondary">Explora el talento disponible y contacta directamente a los perfiles que se ajusten a tu empresa.</p>
         </div>
+        <div className="flex flex-col gap-1 w-full sm:w-80">
+          <label htmlFor="job-select" className="text-xs font-bold text-ink-secondary uppercase tracking-wider">Vacante para calcular afinidad</label>
+          <select
+            id="job-select"
+            className="input w-full"
+            value={selectedJobId}
+            onChange={(e) => setSelectedJobId(e.target.value ? Number(e.target.value) : '')}
+          >
+            <option value="">Selecciona una vacante...</option>
+            {jobOffers.map((job) => (
+              <option key={job.id} value={job.id}>{job.title}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -83,6 +143,7 @@ export default function CompanyTalentPool() {
                 <tr>
                   <th className="px-6 py-4 font-bold text-ink-secondary uppercase text-[11px] tracking-wider">Profesional</th>
                   <th className="px-6 py-4 font-bold text-ink-secondary uppercase text-[11px] tracking-wider">Formación</th>
+                  <th className="px-6 py-4 font-bold text-ink-secondary uppercase text-[11px] tracking-wider">Afinidad</th>
                   <th className="px-6 py-4 font-bold text-ink-secondary uppercase text-[11px] tracking-wider">Contacto Directo</th>
                   <th className="px-6 py-4 font-bold text-ink-secondary uppercase text-[11px] tracking-wider text-right">Acciones</th>
                 </tr>
@@ -109,6 +170,20 @@ export default function CompanyTalentPool() {
                       <div className="flex flex-col gap-1 text-xs text-ink-secondary">
                         <span className="flex items-center gap-1.5 font-semibold text-brand-700"><GraduationCap className="w-3.5 h-3.5" /> Año: {grad.graduation_year}</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {matches[grad.user_id] !== undefined ? (
+                        <span className={twMerge(
+                          'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold',
+                          matches[grad.user_id] >= 75 ? 'bg-green-100 text-green-700' :
+                          matches[grad.user_id] >= 50 ? 'bg-amber-100 text-amber-700' :
+                          'bg-gray-100 text-gray-600'
+                        )}>
+                          {Math.round(matches[grad.user_id])}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-ink-tertiary italic">Sin vacante seleccionada</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1.5 text-xs text-ink-secondary">
