@@ -2,7 +2,8 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { graduatesApi, authApi } from '../api';
 import api from '../api';
-import { Users, GraduationCap, Phone, ExternalLink, Plus, X, Save, Loader2, PlayCircle } from 'lucide-react';
+import { Users, GraduationCap, Phone, ExternalLink, Plus, X, Save, Loader2, PlayCircle, Search } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
 
@@ -48,6 +49,13 @@ export default function AdminGraduates() {
   const [showModal, setShowModal] = useState(false);
   const [selectedGraduate, setSelectedGraduate] = useState<Graduate | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [programFilter, setProgramFilter] = useState('ALL');
+  const [yearFilter, setYearFilter] = useState('ALL');
 
   useEffect(() => {
     fetchGraduates();
@@ -109,6 +117,23 @@ export default function AdminGraduates() {
     }
   };
 
+  const filteredGraduates = graduates.filter(g => {
+    const fullName = `${g.first_name} ${g.last_name}`.toLowerCase();
+    const matchSearch = fullName.includes(searchTerm.toLowerCase()) || (g.phone && g.phone.includes(searchTerm));
+    const matchProgram = programFilter === 'ALL' || g.program_id.toString() === programFilter;
+    const matchYear = yearFilter === 'ALL' || g.graduation_year.toString() === yearFilter;
+    return matchSearch && matchProgram && matchYear;
+  });
+
+  const paginatedGraduates = filteredGraduates.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, programFilter, yearFilter]);
+
+  // Extraer años de graduación únicos para el filtro
+  const uniqueYears = Array.from(new Set(graduates.map(g => g.graduation_year))).sort((a, b) => b - a);
+
   return (
     <div className="space-y-6">
       <div className="page-header">
@@ -134,6 +159,44 @@ export default function AdminGraduates() {
         </div>
       ) : (
         <div className="card overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o teléfono..."
+                  className="input w-full pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <select 
+                  className="input w-full sm:w-64" 
+                  value={programFilter} 
+                  onChange={(e) => setProgramFilter(e.target.value)}
+                >
+                  <option value="ALL">Todos los Programas</option>
+                  {programs.map(p => (
+                    <option key={p.id} value={p.id.toString()}>{p.name}</option>
+                  ))}
+                </select>
+                
+                <select 
+                  className="input w-full sm:w-40" 
+                  value={yearFilter} 
+                  onChange={(e) => setYearFilter(e.target.value)}
+                >
+                  <option value="ALL">Todos los Años</option>
+                  {uniqueYears.map(year => (
+                    <option key={year} value={year.toString()}>{year}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-[var(--bg-muted)] border-b border-[var(--border-color)]">
@@ -144,8 +207,8 @@ export default function AdminGraduates() {
                   <th className="px-6 py-4 font-bold text-ink-secondary uppercase text-[11px] tracking-wider text-right">CV</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-color)]">
-                {graduates.map(grad => (
+              <tbody className="divide-y divide-[var(--border-color)] bg-[var(--bg-card)]">
+                {paginatedGraduates.map((grad) => (
                   <tr key={grad.user_id} className="hover:bg-[var(--bg-muted)] transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -181,9 +244,24 @@ export default function AdminGraduates() {
                     </td>
                   </tr>
                 ))}
+                {filteredGraduates.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-ink-secondary italic">
+                      No se encontraron egresados con los filtros actuales.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+          {filteredGraduates.length > pageSize && (
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={filteredGraduates.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
 

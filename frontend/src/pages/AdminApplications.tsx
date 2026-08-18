@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
-import { FileText, Building2, UserCircle } from 'lucide-react';
+import { FileText, Building2, UserCircle, Search } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import Pagination from '../components/Pagination';
 
 interface Application {
   id: number;
@@ -18,6 +19,12 @@ interface Application {
 export default function AdminApplications() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filters and Pagination
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchApplications();
@@ -55,6 +62,34 @@ export default function AdminApplications() {
         </div>
       ) : (
         <div className="card overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+                <input
+                  type="text"
+                  placeholder="Buscar por vacante o empresa..."
+                  className="input w-full pl-9"
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                />
+              </div>
+              <div className="w-full md:w-auto">
+                <select 
+                  className="input w-full sm:w-48" 
+                  value={statusFilter} 
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="ALL">Todos los Estados</option>
+                  <option value="POSTULADO">Postulado</option>
+                  <option value="EN_EVALUACION">En Evaluación</option>
+                  <option value="CONTRATADO">Contratado</option>
+                  <option value="RECHAZADO">Rechazado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-[var(--bg-muted)] border-b border-[var(--border-color)]">
@@ -66,7 +101,27 @@ export default function AdminApplications() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
-                {applications.map(app => (
+                {(() => {
+                  const filteredApps = applications.filter(app => {
+                    const matchSearch = (app.job_offer?.title.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                                        (app.job_offer?.company.name.toLowerCase() || '').includes(searchTerm.toLowerCase());
+                    const matchStatus = statusFilter === 'ALL' || app.status.toUpperCase() === statusFilter;
+                    return matchSearch && matchStatus;
+                  });
+
+                  const paginatedApps = filteredApps.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+                  if (filteredApps.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-ink-secondary italic">
+                          No se encontraron postulaciones con los filtros actuales.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return paginatedApps.map(app => (
                   <tr key={app.id} className="hover:bg-[var(--bg-muted)] transition-colors">
                     <td className="px-6 py-4">
                       <p className="font-bold text-ink">{app.job_offer?.title}</p>
@@ -87,10 +142,19 @@ export default function AdminApplications() {
                       </span>
                     </td>
                   </tr>
-                ))}
+                ));
+                })()}
               </tbody>
             </table>
           </div>
+          {applications.length > pageSize && (
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={applications.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
     </div>

@@ -30,6 +30,7 @@ class UserInfo(BaseModel):
     email: str
     role_id: int
     role_name: str
+    email_verified: bool = False
 
     class Config:
         from_attributes = True
@@ -42,6 +43,11 @@ class MessageResponse(BaseModel):
 class RegisterResponse(BaseModel):
     message: str
     user_id: int
+
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
 
 
 # Resolver referencia forward

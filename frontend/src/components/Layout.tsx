@@ -15,6 +15,7 @@ import {
   FileText,
   GraduationCap,
   Search,
+  Settings,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import NotificationsBell from './NotificationsBell';
@@ -44,6 +45,13 @@ const getNavItems = (role: string) => {
       name: 'Reporte Postulaciones',
       path: '/admin/applications',
       icon: FileText,
+      roles: ['ADMIN'],
+      section: 'Administración Global',
+    },
+    {
+      name: 'Matchmaking',
+      path: '/admin/matchmaking',
+      icon: Settings,
       roles: ['ADMIN'],
       section: 'Administración Global',
     },

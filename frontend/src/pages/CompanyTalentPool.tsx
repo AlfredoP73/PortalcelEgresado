@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import api, { matchmakingApi } from '../api';
-import { Users, GraduationCap, Phone, ExternalLink, X, FileText, Mail, Briefcase } from 'lucide-react';
+import { Users, GraduationCap, Phone, ExternalLink, X, FileText, Mail, Briefcase, Search } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import Pagination from '../components/Pagination';
 
 const GRADUATES_URL = import.meta.env.VITE_GRADUATES_URL || 'http://localhost:8003';
 
@@ -54,6 +55,12 @@ export default function CompanyTalentPool() {
   const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<number | ''>('');
   const [matches, setMatches] = useState<Record<number, number>>({});
+  
+  // Filters and Pagination
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minMatchFilter, setMinMatchFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchGraduates();
@@ -137,6 +144,34 @@ export default function CompanyTalentPool() {
         </div>
       ) : (
         <div className="card overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre del profesional..."
+                  className="input w-full pl-9"
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <select 
+                  className="input w-full sm:w-48" 
+                  value={minMatchFilter} 
+                  onChange={(e) => { setMinMatchFilter(e.target.value); setCurrentPage(1); }}
+                  disabled={!selectedJobId}
+                >
+                  <option value="ALL">Cualquier Afinidad</option>
+                  <option value="50">Mayor a 50%</option>
+                  <option value="75">Mayor a 75%</option>
+                  <option value="90">Mayor a 90%</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-[var(--bg-muted)] border-b border-[var(--border-color)]">
@@ -149,7 +184,42 @@ export default function CompanyTalentPool() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
-                {graduates.map(grad => (
+                {(() => {
+                  const filteredGraduates = graduates.filter(grad => {
+                    const fullName = `${grad.first_name} ${grad.last_name}`.toLowerCase();
+                    const matchSearch = fullName.includes(searchTerm.toLowerCase());
+                    
+                    let matchScorePassed = true;
+                    if (minMatchFilter !== 'ALL' && selectedJobId) {
+                      const score = matches[grad.user_id] || 0;
+                      matchScorePassed = score >= Number(minMatchFilter);
+                    }
+                    
+                    return matchSearch && matchScorePassed;
+                  });
+
+                  // Si hay una vacante seleccionada, ordenar por afinidad de mayor a menor
+                  if (selectedJobId) {
+                    filteredGraduates.sort((a, b) => {
+                      const scoreA = matches[a.user_id] || 0;
+                      const scoreB = matches[b.user_id] || 0;
+                      return scoreB - scoreA;
+                    });
+                  }
+
+                  const paginatedGraduates = filteredGraduates.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+                  if (filteredGraduates.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-ink-secondary italic">
+                          No se encontraron talentos que coincidan con los filtros.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return paginatedGraduates.map(grad => (
                   <tr key={grad.user_id} className="hover:bg-[var(--bg-muted)] transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -205,10 +275,19 @@ export default function CompanyTalentPool() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ));
+                })()}
               </tbody>
             </table>
           </div>
+          {graduates.length > pageSize && (
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={graduates.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
 

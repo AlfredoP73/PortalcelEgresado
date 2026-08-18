@@ -70,6 +70,19 @@ class Company(CompanyBase):
     class Config:
         from_attributes = True
 
+# --- Job Offer Skills ---
+class JobOfferSkillBase(BaseModel):
+    skill_id: int
+    required_level: str = "Intermedio"
+
+class JobOfferSkillCreate(JobOfferSkillBase):
+    pass
+
+class JobOfferSkill(JobOfferSkillBase):
+    job_offer_id: int
+    class Config:
+        from_attributes = True
+
 # --- Job Offer ---
 class JobOfferBase(BaseModel):
     company_id: int
@@ -79,17 +92,19 @@ class JobOfferBase(BaseModel):
     functions: str
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
+    min_experience_years: int = 0
     program_id: int
     closing_date: date
 
 class JobOfferCreate(JobOfferBase):
-    pass
+    required_skills: List[JobOfferSkillCreate] = []
 
 class JobOffer(JobOfferBase):
     id: int
     status: JobOfferStatus
     company: Company
     program: Program
+    skills: List[JobOfferSkill] = []
 
     class Config:
         from_attributes = True

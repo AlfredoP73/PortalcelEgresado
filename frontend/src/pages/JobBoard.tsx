@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { graduatesApi, matchmakingApi } from '../api';
 import { Search, MapPin, Building2, Briefcase, CalendarDays, CheckCircle2, DollarSign } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import Pagination from '../components/Pagination';
 
 interface JobOffer {
   id: number;
@@ -31,8 +32,15 @@ export default function JobBoard() {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobOffer | null>(null);
   const [applying, setApplying] = useState(false);
+  // Filters and Pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [minSalaryFilter, setMinSalaryFilter] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('ALL');
+  const [cityFilter, setCityFilter] = useState('ALL');
+  const [matchFilter, setMatchFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
+  
   const [successMessage, setSuccessMessage] = useState('');
 
   const rawUser = localStorage.getItem('user');
@@ -87,8 +95,33 @@ export default function JobBoard() {
   const filteredJobs = jobs.filter(job => {
     const matchSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || job.company.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchSalary = minSalaryFilter ? (job.salary_min && job.salary_min >= Number(minSalaryFilter)) : true;
-    return matchSearch && matchSalary;
+    const matchSector = sectorFilter === 'ALL' || job.company.sector?.name === sectorFilter;
+    const matchCity = cityFilter === 'ALL' || job.company.city?.name === cityFilter;
+    
+    let matchScorePassed = true;
+    if (matchFilter !== 'ALL') {
+      const score = matches[job.id] || 0;
+      matchScorePassed = score >= Number(matchFilter);
+    }
+    
+    return matchSearch && matchSalary && matchSector && matchCity && matchScorePassed;
   });
+
+  // Ordenar por afinidad de mayor a menor
+  filteredJobs.sort((a, b) => {
+    const scoreA = matches[a.id] || 0;
+    const scoreB = matches[b.id] || 0;
+    return scoreB - scoreA;
+  });
+
+  const paginatedJobs = filteredJobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, minSalaryFilter, sectorFilter, cityFilter, matchFilter]);
+
+  const uniqueSectors = Array.from(new Set(jobs.map(j => j.company.sector?.name).filter(Boolean))).sort();
+  const uniqueCities = Array.from(new Set(jobs.map(j => j.company.city?.name).filter(Boolean))).sort();
 
   return (
     <div className="space-y-6">
@@ -100,28 +133,65 @@ export default function JobBoard() {
       </div>
 
       {/* Filters/Search */}
-      <div className="card p-4 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-tertiary" />
-          <input
-            type="text"
-            placeholder="Buscar por cargo o empresa..."
-            className="input pl-10 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex-1 max-w-xs">
-            <select 
-              className="input w-full" 
-              value={minSalaryFilter}
-              onChange={(e) => setMinSalaryFilter(e.target.value)}
-            >
-              <option value="">Cualquier salario</option>
-              <option value="1500000">Desde $1.5M</option>
-              <option value="2500000">Desde $2.5M</option>
-              <option value="4000000">Desde $4.0M</option>
-            </select>
+      <div className="card overflow-hidden">
+        <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+              <input
+                type="text"
+                placeholder="Buscar por cargo o empresa..."
+                className="input pl-9 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap sm:flex-nowrap gap-4 w-full md:w-auto">
+              <select 
+                className="input w-full sm:w-40" 
+                value={sectorFilter}
+                onChange={(e) => setSectorFilter(e.target.value)}
+              >
+                <option value="ALL">Todos los Sectores</option>
+                {uniqueSectors.map((sector: any) => (
+                  <option key={sector} value={sector}>{sector}</option>
+                ))}
+              </select>
+
+              <select 
+                className="input w-full sm:w-40" 
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+              >
+                <option value="ALL">Todas las Ciudades</option>
+                {uniqueCities.map((city: any) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+
+              <select 
+                className="input w-full sm:w-40" 
+                value={minSalaryFilter}
+                onChange={(e) => setMinSalaryFilter(e.target.value)}
+              >
+                <option value="">Cualquier salario</option>
+                <option value="1500000">Desde $1.5M</option>
+                <option value="2500000">Desde $2.5M</option>
+                <option value="4000000">Desde $4.0M</option>
+              </select>
+
+              <select 
+                className="input w-full sm:w-40" 
+                value={matchFilter}
+                onChange={(e) => setMatchFilter(e.target.value)}
+              >
+                <option value="ALL">Cualquier Afinidad</option>
+                <option value="50">Mayor a 50%</option>
+                <option value="75">Mayor a 75%</option>
+                <option value="90">Mayor a 90%</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -139,7 +209,7 @@ export default function JobBoard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredJobs.map(job => (
+            {paginatedJobs.map(job => (
               <div key={job.id} className="card p-6 flex flex-col hover:-translate-y-1 transition-all duration-300 group cursor-pointer" onClick={() => setSelectedJob(job)}>
                 <div className="mb-4">
                   <h3 className="text-lg font-bold text-ink group-hover:text-brand-600 transition-colors line-clamp-1">{job.title}</h3>
@@ -184,6 +254,15 @@ export default function JobBoard() {
             ))}
           </div>
         )
+      )}
+
+      {filteredJobs.length > pageSize && (
+        <Pagination 
+          currentPage={currentPage}
+          totalItems={filteredJobs.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       {/* Details Modal */}

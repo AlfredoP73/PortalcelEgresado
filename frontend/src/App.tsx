@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import VerifyEmail from './pages/VerifyEmail';
 import Companies from './pages/Companies';
 import JobOffers from './pages/JobOffers';
 import Kanban from './pages/Kanban';
@@ -22,6 +23,7 @@ import CompanyTalentPool from './pages/CompanyTalentPool';
 import AdminDashboard from './pages/AdminDashboard';
 import CompanyDashboard from './pages/CompanyDashboard';
 import GraduateDashboard from './pages/GraduateDashboard';
+import AdminMatchmaking from './pages/AdminMatchmaking';
 
 const HomeRedirect = () => {
   const rawUser = localStorage.getItem('user');
@@ -40,6 +42,7 @@ export default function App() {
       <Routes>
         {/* Pública */}
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         {/* Solo ADMIN */}
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -94,6 +97,10 @@ export default function App() {
           <Route
             path="/admin/users"
             element={<Layout><AdminUsers /></Layout>}
+          />
+          <Route
+            path="/admin/matchmaking"
+            element={<Layout><AdminMatchmaking /></Layout>}
           />
         </Route>
 

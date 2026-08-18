@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { authApi } from '../api';
 import { Search, Plus, Mail, ShieldAlert, PlayCircle, Loader2 } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 interface User {
   id: number;
@@ -14,6 +15,9 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   
   // Registration form
   const [showForm, setShowForm] = useState(false);
@@ -81,10 +85,13 @@ export default function AdminUsers() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.role_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(u => {
+    const matchSearch = u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchRole = roleFilter === 'ALL' || u.role_name === roleFilter;
+    return matchSearch && matchRole;
+  });
+
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-6">
@@ -131,15 +138,29 @@ export default function AdminUsers() {
 
       <div className="card overflow-hidden">
         <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
-            <input
-              type="text"
-              placeholder="Buscar por email o rol..."
-              className="input w-full pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+              <input
+                type="text"
+                placeholder="Buscar por email..."
+                className="input w-full pl-9"
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
+            <div className="w-full md:w-auto">
+              <select 
+                className="input w-full sm:w-48" 
+                value={roleFilter} 
+                onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="ALL">Todos los Roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="COMPANY">Company</option>
+                <option value="GRADUATE">Graduate</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -159,7 +180,7 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
-                {filteredUsers.map(user => (
+                {paginatedUsers.map(user => (
                   <tr key={user.id} className="hover:bg-[var(--bg-muted)] transition-colors">
                     <td className="px-6 py-4 text-ink-secondary font-mono">{user.id}</td>
                     <td className="px-6 py-4 font-bold text-ink flex items-center gap-2">
@@ -197,6 +218,15 @@ export default function AdminUsers() {
               </tbody>
             </table>
           </div>
+        )}
+        
+        {filteredUsers.length > pageSize && (
+          <Pagination 
+            currentPage={currentPage}
+            totalItems={filteredUsers.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

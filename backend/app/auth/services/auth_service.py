@@ -2,9 +2,11 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 import os
+import uuid
 
 from app.auth import models, schemas
 from app.auth.utils.auth_utils import verify_password, get_password_hash, create_access_token
+from app.auth.services.email_service import send_verification_email
 
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 ALGORITHM  = os.getenv("ALGORITHM", "HS256")
@@ -37,6 +39,13 @@ def authenticate_user(body: schemas.LoginRequest, db: Session) -> schemas.TokenR
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Check email verification
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
+        )
+
     token = create_access_token(data={"sub": user.email})
     return schemas.TokenResponse(
         access_token=token,
@@ -46,6 +55,7 @@ def authenticate_user(body: schemas.LoginRequest, db: Session) -> schemas.TokenR
             email=user.email,
             role_id=user.role_id,
             role_name=user.role.name,
+            email_verified=user.email_verified,
         ),
     )
 
@@ -58,15 +68,56 @@ def register_user(body: schemas.RegisterRequest, db: Session) -> dict:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"El rol con id={body.role_id} no existe")
 
+    verification_token = str(uuid.uuid4())
+
     new_user = models.User(
         email=body.email,
         password_hash=get_password_hash(body.password),
         role_id=body.role_id,
+        email_verified=False,
+        verification_token=verification_token,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "Usuario registrado exitosamente", "user_id": new_user.id}
+
+    # Send verification email
+    send_verification_email(body.email, verification_token)
+
+    return {"message": "Usuario registrado exitosamente. Revisa tu correo para verificar tu cuenta.", "user_id": new_user.id}
+
+def verify_email(token: str, db: Session) -> dict:
+    """Verifica el email de un usuario usando su token de verificación."""
+    user = db.query(models.User).filter(models.User.verification_token == token).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token de verificación inválido o ya utilizado."
+        )
+
+    user.email_verified = True
+    user.verification_token = None
+    db.commit()
+
+    return {"message": "Correo verificado exitosamente. Ya puedes iniciar sesión."}
+
+def resend_verification(email: str, db: Session) -> dict:
+    """Reenvía el correo de verificación."""
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Usuario no encontrado")
+    if user.email_verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Este correo ya fue verificado")
+
+    # Generate new token
+    new_token = str(uuid.uuid4())
+    user.verification_token = new_token
+    db.commit()
+
+    send_verification_email(email, new_token)
+    return {"message": "Correo de verificación reenviado exitosamente"}
 
 def impersonate_user(body: schemas.ImpersonateRequest, admin_user: models.User, db: Session) -> schemas.TokenResponse:
     if admin_user.role_id != 1:
@@ -85,6 +136,7 @@ def impersonate_user(body: schemas.ImpersonateRequest, admin_user: models.User, 
             email=target_user.email,
             role_id=target_user.role_id,
             role_name=target_user.role.name,
+            email_verified=target_user.email_verified,
         ),
     )
 
@@ -98,7 +150,8 @@ def get_all_users(admin_user: models.User, db: Session) -> list[schemas.UserInfo
             id=u.id,
             email=u.email,
             role_id=u.role_id,
-            role_name=u.role.name
+            role_name=u.role.name,
+            email_verified=u.email_verified,
         )
         for u in users
     ]
