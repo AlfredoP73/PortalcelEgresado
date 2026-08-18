@@ -5,11 +5,10 @@ from typing import List
 
 from app.database import get_db
 from app.auth.utils.auth_utils import get_current_user
-from app.auth.rbac import RoleChecker
+from app.auth.decorators import require_roles
 from app.graduates import schemas
 from app.graduates.services import graduate_service
 
-require_admin = RoleChecker(["ADMIN"])
 
 router = APIRouter(
     prefix="/api/modulo1",
@@ -22,16 +21,19 @@ public_router = APIRouter(
     tags=["Perfil de Egresado (Público)"]
 )
 
-@router.post("/admin/graduates", response_model=schemas.Graduate, dependencies=[Depends(require_admin)])
-def admin_create_graduate(body: schemas.AdminGraduateCreate, db: Session = Depends(get_db)):
+@router.post("/admin/graduates", response_model=schemas.Graduate)
+@require_roles("ADMIN")
+def admin_create_graduate(body: schemas.AdminGraduateCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.admin_create_graduate(body, db)
 
-@router.get("/admin/graduates", response_model=List[schemas.Graduate], dependencies=[Depends(require_admin)])
-def admin_get_all_graduates(db: Session = Depends(get_db)):
+@router.get("/admin/graduates", response_model=List[schemas.Graduate])
+@require_roles("ADMIN")
+def admin_get_all_graduates(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.admin_get_all_graduates(db)
 
-@router.get("/admin/applications", response_model=List[schemas.Application], dependencies=[Depends(require_admin)])
-def admin_get_all_applications(db: Session = Depends(get_db)):
+@router.get("/admin/applications", response_model=List[schemas.Application])
+@require_roles("ADMIN")
+def admin_get_all_applications(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.admin_get_all_applications(db)
 
 @router.get("/profile", response_model=schemas.Graduate)
@@ -61,7 +63,9 @@ def upload_profile_picture(file: UploadFile = File(...), db: Session = Depends(g
 @public_router.get("/files/{filename}")
 def get_file(filename: str):
     try:
-        response = graduate_service.s3_client.get_object(Bucket=graduate_service.MINIO_BUCKET_NAME, Key=filename)
+        from app.core.s3 import MinioClient
+        s3 = MinioClient.get_client()
+        response = s3.get_object(Bucket="cvs", Key=filename)
         return StreamingResponse(response['Body'].iter_chunks(), media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
@@ -69,7 +73,9 @@ def get_file(filename: str):
 @public_router.get("/avatars/{filename}")
 def get_avatar(filename: str):
     try:
-        response = graduate_service.s3_client.get_object(Bucket="avatars", Key=filename)
+        from app.core.s3 import MinioClient
+        s3 = MinioClient.get_client()
+        response = s3.get_object(Bucket="avatars", Key=filename)
         
         content_type = "image/jpeg"
         if filename.lower().endswith('.png'):

@@ -129,79 +129,17 @@ def _get_job_offer_data(db: Session, job_offer_id: int) -> Optional[dict]:
 
 
 # ── Algoritmo puro (fácil de testear unitariamente) ──────────────────────────
+from app.matchmaking.services.score_builder import MatchScoreBuilder
+
 def calcular_afinidad(graduate: dict, job_offer: dict, weights: dict) -> dict:
-    # 1. Programa académico: match exacto = 100, si no = 0.
-    #    NULL nunca es un match: si alguno de los dos no tiene programa, 0.
-    g_pid = graduate.get("program_id")
-    j_pid = job_offer.get("program_id")
-    if g_pid is not None and j_pid is not None and g_pid == j_pid:
-        program_score = Decimal("100.00")
-    else:
-        program_score = Decimal("0.00")
-
-    # 2. Habilidades: porcentaje de las requeridas que el egresado posee (Jaccard sobre lo requerido)
-    req_skills = set(job_offer["required_skills"].keys())
-    grad_skills = set(graduate["skills"].keys())
-    if req_skills:
-        skills_score = (Decimal(len(req_skills & grad_skills)) / Decimal(len(req_skills))) * 100
-    else:
-        skills_score = Decimal("100.00")  # la vacante no exige skills puntuales -> no penaliza
-
-    # 3. Experiencia: escala progresiva, no todo-o-nada
-    min_exp = job_offer["min_experience_years"] or 0
-    if min_exp == 0:
-        experience_score = Decimal("100.00")
-    else:
-        ratio = min(Decimal(str(graduate["total_experience_years"])) / Decimal(min_exp), Decimal("1.0"))
-        experience_score = ratio * 100
-
-    final_score = (
-        program_score * Decimal(str(weights["program_weight"]))
-        + skills_score * Decimal(str(weights["skills_weight"]))
-        + experience_score * Decimal(str(weights["experience_weight"]))
-    )
-
-    # Bonus (tie-breaker) por encuesta de seguimiento: ajusta ±pocos puntos
-    survey_bonus = _bonus_encuesta(graduate, job_offer)
-    final_score = min(final_score + survey_bonus, Decimal("100.00"))
-
-    return {
-        "score": round(final_score, 2),
-        "program_score": round(program_score, 2),
-        "skills_score": round(skills_score, 2),
-        "experience_score": round(experience_score, 2),
-        "survey_bonus": round(survey_bonus, 2),
-    }
-
-
-def _bonus_encuesta(graduate: dict, job_offer: dict) -> Decimal:
-    """Puntos de afinidad extra derivados de la Encuesta de Seguimiento (M01).
-
-    Reglas (bonus acumulable, máx ~12 puntos):
-      +4  el egresado NO está laborando (disponible para la vacante)
-      +3  su empleo está totalmente relacionado con su programa académico
-      +1.5 el empleo tiene relación parcial con su programa
-      +5  el sector donde se desempeña coincide con el de la empresa de la vacante
-    """
-    survey = graduate.get("survey") or {}
-    bonus = Decimal("0.00")
-
-    laborando = str(survey.get("laborando") or "").strip().lower()
-    if laborando.startswith("no"):
-        bonus += Decimal("4.00")
-
-    relacion = str(survey.get("relacion_programa") or "").strip().lower()
-    if "total" in relacion or relacion == "sí" or relacion == "si":
-        bonus += Decimal("3.00")
-    elif "parcial" in relacion:
-        bonus += Decimal("1.50")
-
-    sector = str(survey.get("sector") or "").strip().lower()
-    company_sector = str(job_offer.get("company_sector") or "").strip().lower()
-    if sector and company_sector and (sector in company_sector or company_sector in sector):
-        bonus += Decimal("5.00")
-
-    return bonus
+    builder = MatchScoreBuilder(graduate, job_offer, weights)
+    builder.build_program_score() \
+           .build_skills_score() \
+           .build_experience_score() \
+           .build_survey_bonus() \
+           .build_final_score()
+           
+    return builder.get_result()
 
 
 # ── Persistencia + notificaciones ────────────────────────────────────────────

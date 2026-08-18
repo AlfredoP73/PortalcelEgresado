@@ -19,6 +19,21 @@ authApi.interceptors.request.use((config) => {
   return config;
 });
 
+const handleGlobalError = (error: any) => {
+  if (error.response?.status === 401) {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  } else if (!error.response || error.response.status >= 500) {
+    if (window.location.pathname !== '/mantenimiento') {
+      window.location.href = '/mantenimiento';
+    }
+  }
+  return Promise.reject(error);
+};
+
+authApi.interceptors.response.use((res) => res, handleGlobalError);
+
 // ── Cliente de empresas/vacantes ─────────────────────────────────────────────
 const api = axios.create({
   baseURL: `${COMPANIES_URL}/api/modulo2`,
@@ -35,17 +50,7 @@ api.interceptors.request.use((config) => {
 });
 
 // Interceptor: si el backend devuelve 401, limpia sesión y redirige al login
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+api.interceptors.response.use((res) => res, handleGlobalError);
 
 export const graduatesApi = axios.create({
   baseURL: `${GRADUATES_URL}/api/modulo1`,
@@ -60,17 +65,7 @@ graduatesApi.interceptors.request.use((config) => {
   return config;
 });
 
-graduatesApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+graduatesApi.interceptors.response.use((res) => res, handleGlobalError);
 
 export const matchmakingApi = axios.create({
   baseURL: `${MATCHMAKING_URL}/matching`,
@@ -85,17 +80,7 @@ matchmakingApi.interceptors.request.use((config) => {
   return config;
 });
 
-matchmakingApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+matchmakingApi.interceptors.response.use((res) => res, handleGlobalError);
 
 // ── Notificaciones de afinidad (Matchmaking) ─────────────────────────────────
 export interface MatchNotification {

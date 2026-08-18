@@ -6,7 +6,7 @@ import uuid
 
 from app.auth import models, schemas
 from app.auth.utils.auth_utils import verify_password, get_password_hash, create_access_token
-from app.auth.services.email_service import send_verification_email
+from app.auth.services.notification_factory import NotificationFactory
 
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 ALGORITHM  = os.getenv("ALGORITHM", "HS256")
@@ -82,7 +82,8 @@ def register_user(body: schemas.RegisterRequest, db: Session) -> dict:
     db.refresh(new_user)
 
     # Send verification email
-    send_verification_email(body.email, verification_token)
+    notifier = NotificationFactory.get_notifier("email")
+    notifier.send_verification(body.email, verification_token)
 
     return {"message": "Usuario registrado exitosamente. Revisa tu correo para verificar tu cuenta.", "user_id": new_user.id}
 
@@ -116,7 +117,8 @@ def resend_verification(email: str, db: Session) -> dict:
     user.verification_token = new_token
     db.commit()
 
-    send_verification_email(email, new_token)
+    notifier = NotificationFactory.get_notifier("email")
+    notifier.send_verification(email, new_token)
     return {"message": "Correo de verificación reenviado exitosamente"}
 
 def impersonate_user(body: schemas.ImpersonateRequest, admin_user: models.User, db: Session) -> schemas.TokenResponse:

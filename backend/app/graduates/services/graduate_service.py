@@ -68,24 +68,14 @@ def create_or_update_profile(profile: schemas.GraduateCreate, current_user: dict
     
     db.commit()
     db.refresh(db_profile)
-    from app.matchmaking.client import trigger_recalcular
-    trigger_recalcular(graduate_id=current_user["id"])
+    matchmaking_adapter.trigger_recalculate(graduate_id=current_user["id"])
     return db_profile
 
-import boto3
+from app.core.adapters import MinioStorageAdapter, HttpMatchmakingAdapter
 
-# Setup MinIO client
-MINIO_URL = os.getenv("MINIO_URL", "http://minio:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "cvs")
-
-s3_client = boto3.client(
-    "s3",
-    endpoint_url=MINIO_URL,
-    aws_access_key_id=MINIO_ACCESS_KEY,
-    aws_secret_access_key=MINIO_SECRET_KEY,
-)
+storage_adapter = MinioStorageAdapter()
+matchmaking_adapter = HttpMatchmakingAdapter()
 
 def upload_cv(file: UploadFile, current_user: dict, db: Session):
     db_profile = db.query(models.Graduate).filter(models.Graduate.user_id == current_user["id"]).first()
@@ -94,25 +84,9 @@ def upload_cv(file: UploadFile, current_user: dict, db: Session):
         
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="El archivo debe ser PDF")
-        
-    # Ensure bucket exists
-    try:
-        s3_client.head_bucket(Bucket=MINIO_BUCKET_NAME)
-    except Exception:
-        try:
-            s3_client.create_bucket(Bucket=MINIO_BUCKET_NAME)
-        except Exception as e:
-            print(f"Error creating bucket: {e}")
 
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    
     try:
-        s3_client.upload_fileobj(
-            file.file,
-            MINIO_BUCKET_NAME,
-            filename,
-            ExtraArgs={"ContentType": "application/pdf"}
-        )
+        filename = storage_adapter.upload_file(file, MINIO_BUCKET_NAME, "application/pdf")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir el archivo a MinIO: {str(e)}")
         
@@ -130,13 +104,6 @@ def upload_profile_picture(file: UploadFile, current_user: dict, db: Session):
         raise HTTPException(status_code=400, detail="El archivo debe ser una imagen (JPG, PNG, WEBP)")
         
     bucket_name = "avatars"
-    try:
-        s3_client.head_bucket(Bucket=bucket_name)
-    except Exception:
-        try:
-            s3_client.create_bucket(Bucket=bucket_name)
-        except Exception as e:
-            print(f"Error creating bucket {bucket_name}: {e}")
 
     # Set content type based on extension
     content_type = "image/jpeg"
@@ -145,15 +112,8 @@ def upload_profile_picture(file: UploadFile, current_user: dict, db: Session):
     elif file.filename.lower().endswith('.webp'):
         content_type = "image/webp"
 
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    
     try:
-        s3_client.upload_fileobj(
-            file.file,
-            bucket_name,
-            filename,
-            ExtraArgs={"ContentType": content_type}
-        )
+        filename = storage_adapter.upload_file(file, bucket_name, content_type)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al subir la imagen a MinIO: {str(e)}")
         
@@ -198,6 +158,5 @@ def update_skills(skills_data: schemas.GraduateSkillsUpdate, current_user: dict,
         db.add(db_skill)
     
     db.commit()
-    from app.matchmaking.client import trigger_recalcular
-    trigger_recalcular(graduate_id=current_user["id"])
+    matchmaking_adapter.trigger_recalculate(graduate_id=current_user["id"])
     return {"detail": "Habilidades actualizadas"}
