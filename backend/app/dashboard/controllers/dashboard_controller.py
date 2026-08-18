@@ -3,15 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.auth.utils.auth_utils import get_current_user
-from app.auth.rbac import RoleChecker
+from app.auth.rbac import RBACProxy
 
 from app.dashboard import schemas
-from app.dashboard.services import dashboard_service
+from app.dashboard.services.dashboard_facade import DashboardFacade
 
 
-require_admin = RoleChecker(["ADMIN"])
-require_company = RoleChecker(["COMPANY"])
-require_graduate = RoleChecker(["GRADUATE"])
+require_admin = RBACProxy(["ADMIN"])
+require_company = RBACProxy(["COMPANY"])
+require_graduate = RBACProxy(["GRADUATE"])
 
 router = APIRouter(
     prefix="/api",
@@ -31,7 +31,8 @@ def get_dashboard(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    return dashboard_service.get_dashboard(db, program_id, year)
+    facade = DashboardFacade(db)
+    return facade.get_admin_dashboard(program_id, year)
 
 @router.get(
     "/company/dashboard",
@@ -42,7 +43,8 @@ def get_company_dashboard(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    return dashboard_service.get_company_dashboard(db, current_user["id"])
+    facade = DashboardFacade(db)
+    return facade.get_company_dashboard(current_user["id"])
 
 @router.get(
     "/graduate/dashboard",
@@ -53,4 +55,5 @@ def get_graduate_dashboard(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    return dashboard_service.get_graduate_dashboard(db, current_user["id"])
+    facade = DashboardFacade(db)
+    return facade.get_graduate_dashboard(current_user["id"])
