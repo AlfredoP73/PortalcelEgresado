@@ -1,8 +1,9 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import api, { authApi } from '../api';
-import { Plus, Check, X, Building2, MapPin, Mail, AlertCircle, Trash2, Edit2, Briefcase, Users } from 'lucide-react';
+import { Search, Building2, AlertCircle, Trash2, Edit2, Check, X, Plus, MapPin, Mail, Briefcase, Users } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import Pagination from '../components/Pagination';
 
 interface Sector { id: number; name: string }
 interface City { id: number; name: string }
@@ -21,6 +22,15 @@ export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+  
+  // Filters and Pagination
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('ALL');
+  const [cityFilter, setCityFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
@@ -404,9 +414,71 @@ export default function Companies() {
         </div>
       )}
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      {(() => {
+        const filteredCompanies = companies.filter(c => {
+          const matchSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              c.contact_email.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchSector = sectorFilter === 'ALL' || c.sector?.id.toString() === sectorFilter;
+          const matchCity = cityFilter === 'ALL' || c.city?.id.toString() === cityFilter;
+          const matchStatus = statusFilter === 'ALL' || c.status.toUpperCase() === statusFilter;
+          return matchSearch && matchSector && matchCity && matchStatus;
+        });
+
+        const paginatedCompanies = filteredCompanies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+        return (
+          <div className="card overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+                  <input
+                    type="text"
+                    placeholder="Buscar empresa o correo..."
+                    className="input w-full pl-9"
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
+                <div className="flex flex-wrap sm:flex-nowrap gap-4 w-full md:w-auto">
+                  <select 
+                    className="input w-full sm:w-48" 
+                    value={sectorFilter} 
+                    onChange={(e) => { setSectorFilter(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">Todos los Sectores</option>
+                    {sectors.map(s => (
+                      <option key={s.id} value={s.id.toString()}>{s.name}</option>
+                    ))}
+                  </select>
+                  
+                  <select 
+                    className="input w-full sm:w-40" 
+                    value={cityFilter} 
+                    onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">Todas las Ciudades</option>
+                    {cities.map(c => (
+                      <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                    ))}
+                  </select>
+
+                  <select 
+                    className="input w-full sm:w-36" 
+                    value={statusFilter} 
+                    onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">Estados</option>
+                    <option value="APPROVED">Aprobada</option>
+                    <option value="PENDING">Pendiente</option>
+                    <option value="REJECTED">Rechazada</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
             <thead className="text-ink-secondary text-[12px] font-bold uppercase tracking-wider" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <tr>
                 <th className="px-6 py-4">Empresa</th>
@@ -417,17 +489,17 @@ export default function Companies() {
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
-              {companies.length === 0 ? (
+              {paginatedCompanies.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-ink-tertiary">
                     <div className="flex flex-col items-center gap-3">
                       <AlertCircle className="w-8 h-8 opacity-50" />
-                      <p className="text-base font-medium">No hay empresas registradas aún.</p>
+                      <p className="text-base font-medium">No se encontraron empresas.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                companies.map((company) => (
+                paginatedCompanies.map((company) => (
                   <tr key={company.user_id} className="hover:bg-brand-50/30 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -503,7 +575,17 @@ export default function Companies() {
             </tbody>
           </table>
         </div>
+        {filteredCompanies.length > pageSize && (
+          <Pagination 
+            currentPage={currentPage}
+            totalItems={filteredCompanies.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
+      );
+    })()}
     </div>
   );
 }

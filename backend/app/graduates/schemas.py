@@ -50,6 +50,26 @@ class Certification(CertificationBase):
     class Config:
         from_attributes = True
 
+class SkillBase(BaseModel):
+    name: str
+
+class Skill(SkillBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class GraduateSkillBase(BaseModel):
+    skill_id: int
+    proficiency_level: str = "Intermedio"
+
+class GraduateSkillCreate(GraduateSkillBase):
+    pass
+
+class GraduateSkill(GraduateSkillBase):
+    graduate_id: int
+    class Config:
+        from_attributes = True
+
 class GraduateBase(BaseModel):
     first_name: str
     last_name: str
@@ -57,16 +77,21 @@ class GraduateBase(BaseModel):
     graduation_year: int
     phone: Optional[str] = None
     cv_url: Optional[str] = None
+    profile_picture_url: Optional[str] = None
     profile_summary: Optional[str] = None
 
 class GraduateCreate(GraduateBase):
     user_id: Optional[int] = None
+
+class GraduateSkillsUpdate(BaseModel):
+    skills: List[GraduateSkillCreate]
 
 class Graduate(GraduateBase):
     user_id: int
     experiences: List[WorkExperience] = []
     academic_histories: List[AcademicHistory] = []
     certifications: List[Certification] = []
+    skills: List[GraduateSkill] = []
 
     class Config:
         from_attributes = True

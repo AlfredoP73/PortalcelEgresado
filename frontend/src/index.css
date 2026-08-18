@@ -162,6 +162,9 @@ body.dark .label-upper { color: #9dc8af; }
   box-shadow: 0 0 0 3px rgba(134,239,172,0.3);
   border-color: var(--color-brand-500);
 }
+.input.pl-9, .input.pl-10 {
+  padding-left: 2.5rem !important;
+}
 select.input { cursor: pointer; }
 
 /* ── Form Labels ── */

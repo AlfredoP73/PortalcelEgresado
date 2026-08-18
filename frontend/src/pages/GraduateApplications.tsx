@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { graduatesApi } from '../api';
-import { Building2, CheckCircle2 } from 'lucide-react';
+import { Building2, CheckCircle2, Search } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import Pagination from '../components/Pagination';
 
 interface JobOffer {
   id: number;
@@ -23,6 +24,12 @@ interface Application {
 export default function GraduateApplications() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filters and Pagination
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchApplications();
@@ -51,15 +58,62 @@ export default function GraduateApplications() {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
         </div>
-      ) : applications.length === 0 ? (
-        <div className="card p-12 text-center">
-          <CheckCircle2 className="w-12 h-12 text-ink-tertiary mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-bold text-ink">Aún no tienes postulaciones</h3>
-          <p className="text-ink-secondary mt-2 max-w-md mx-auto">Explora las vacantes disponibles y postúlate a las que mejor se ajusten a tu perfil.</p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {applications.map(app => (
+        <>
+          <div className="card overflow-hidden mb-6">
+            <div className="p-4 bg-[var(--bg-surface)] border-b border-[var(--border-color)]">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-secondary" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por empresa o cargo..."
+                    className="input w-full pl-9"
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  />
+                </div>
+                <div className="w-full md:w-auto">
+                  <select 
+                    className="input w-full sm:w-48" 
+                    value={statusFilter} 
+                    onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">Todos los Estados</option>
+                    <option value="POSTULADO">Postulado</option>
+                    <option value="EN_EVALUACION">En Evaluación</option>
+                    <option value="CONTRATADO">Contratado</option>
+                    <option value="RECHAZADO">Rechazado</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {(() => {
+            const filteredApps = applications.filter(app => {
+              const matchSearch = (app.job_offer?.title.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                                  (app.job_offer?.company.name.toLowerCase() || '').includes(searchTerm.toLowerCase());
+              const matchStatus = statusFilter === 'ALL' || app.status.toUpperCase() === statusFilter;
+              return matchSearch && matchStatus;
+            });
+
+            const paginatedApps = filteredApps.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+            if (filteredApps.length === 0) {
+              return (
+                <div className="card p-12 text-center">
+                  <CheckCircle2 className="w-12 h-12 text-ink-tertiary mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-bold text-ink">No hay postulaciones</h3>
+                  <p className="text-ink-secondary mt-2 max-w-md mx-auto">No se encontraron postulaciones con los filtros seleccionados.</p>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {paginatedApps.map(app => (
             <div key={app.id} className="card p-6 flex flex-col hover:-translate-y-1 transition-all duration-300">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -81,8 +135,22 @@ export default function GraduateApplications() {
                 Postulado el: {new Date(app.application_date).toLocaleDateString()}
               </div>
             </div>
-          ))}
-        </div>
+                  ))}
+                </div>
+                {filteredApps.length > pageSize && (
+                  <div className="mt-6">
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalItems={filteredApps.length}
+                      pageSize={pageSize}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </>
       )}
     </div>
   );

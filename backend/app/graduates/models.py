@@ -26,10 +26,12 @@ class Graduate(Base):
     phone = Column(String)
     profile_summary = Column(Text, nullable=True)
     cv_url = Column(String(255), nullable=True)
+    profile_picture_url = Column(String(255), nullable=True)
 
     experiences = relationship("WorkExperience", back_populates="graduate")
     academic_histories = relationship("AcademicHistory", back_populates="graduate")
     certifications = relationship("Certification", back_populates="graduate")
+    skills = relationship("GraduateSkill", cascade="all, delete-orphan")
 
 class GraduateSkill(Base):
     __tablename__ = "graduate_skills"
