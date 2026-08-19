@@ -5,11 +5,10 @@ from typing import List
 
 from app.database import get_db
 from app.auth.utils.auth_utils import get_current_user
-from app.auth.rbac import RoleChecker
+from app.auth.decorators import require_roles
 from app.graduates import schemas
 from app.graduates.services import graduate_service
 
-require_admin = RoleChecker(["ADMIN"])
 
 router = APIRouter(
     prefix="/api/modulo1",
@@ -22,16 +21,19 @@ public_router = APIRouter(
     tags=["Perfil de Egresado (Público)"]
 )
 
-@router.post("/admin/graduates", response_model=schemas.Graduate, dependencies=[Depends(require_admin)])
-def admin_create_graduate(body: schemas.AdminGraduateCreate, db: Session = Depends(get_db)):
+@router.post("/admin/graduates", response_model=schemas.Graduate)
+@require_roles("ADMIN")
+def admin_create_graduate(body: schemas.AdminGraduateCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.admin_create_graduate(body, db)
 
-@router.get("/admin/graduates", response_model=List[schemas.Graduate], dependencies=[Depends(require_admin)])
-def admin_get_all_graduates(db: Session = Depends(get_db)):
+@router.get("/admin/graduates", response_model=List[schemas.Graduate])
+@require_roles("ADMIN")
+def admin_get_all_graduates(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.admin_get_all_graduates(db)
 
-@router.get("/admin/applications", response_model=List[schemas.Application], dependencies=[Depends(require_admin)])
-def admin_get_all_applications(db: Session = Depends(get_db)):
+@router.get("/admin/applications", response_model=List[schemas.Application])
+@require_roles("ADMIN")
+def admin_get_all_applications(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.admin_get_all_applications(db)
 
 @router.get("/profile", response_model=schemas.Graduate)
@@ -54,10 +56,45 @@ def add_certification(cert: schemas.CertificationCreate, db: Session = Depends(g
 def delete_certification(cert_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return graduate_service.delete_certification(cert_id, current_user, db)
 
+@router.post("/profile/picture")
+def upload_profile_picture(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    return graduate_service.upload_profile_picture(file, current_user, db)
+
 @public_router.get("/files/{filename}")
 def get_file(filename: str):
     try:
-        response = graduate_service.s3_client.get_object(Bucket=graduate_service.MINIO_BUCKET_NAME, Key=filename)
+        from app.core.s3 import MinioClient
+        s3 = MinioClient.get_client()
+        response = s3.get_object(Bucket="cvs", Key=filename)
         return StreamingResponse(response['Body'].iter_chunks(), media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+@public_router.get("/avatars/{filename}")
+def get_avatar(filename: str):
+    try:
+        from app.core.s3 import MinioClient
+        s3 = MinioClient.get_client()
+        response = s3.get_object(Bucket="avatars", Key=filename)
+        
+        content_type = "image/jpeg"
+        if filename.lower().endswith('.png'):
+            content_type = "image/png"
+        elif filename.lower().endswith('.webp'):
+            content_type = "image/webp"
+            
+        return StreamingResponse(response['Body'].iter_chunks(), media_type=content_type)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Imagen no encontrada")
+
+@public_router.get("/skills", response_model=List[schemas.Skill])
+def get_all_skills(db: Session = Depends(get_db)):
+    return graduate_service.get_all_skills(db)
+
+@router.post("/skills", response_model=schemas.Skill)
+def create_skill(skill: schemas.SkillBase, db: Session = Depends(get_db)):
+    return graduate_service.create_skill(skill, db)
+
+@router.put("/profile/skills")
+def update_skills(skills_data: schemas.GraduateSkillsUpdate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    return graduate_service.update_skills(skills_data, current_user, db)

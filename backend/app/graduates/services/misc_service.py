@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime
 from app.graduates import models, schemas
 import app.companies.models as company_models
+from app.core.adapters import HttpMatchmakingAdapter
 
 def get_jobs(skip: int, limit: int, q: Optional[str], salary_min: Optional[int], db: Session):
     query = db.query(company_models.JobOffer).filter(company_models.JobOffer.status == company_models.JobOfferStatus.ACTIVE)
@@ -53,22 +54,28 @@ def get_survey_response(survey_id: int, current_user: dict, db: Session):
     ).first()
     return response
 
-def submit_survey_response(survey_id: int, answers: dict, current_user: dict, db: Session):
-    existing = db.query(models.SurveyResponse).filter(
-        models.SurveyResponse.survey_id == survey_id,
-        models.SurveyResponse.graduate_id == current_user["id"]
+def submit_survey_response(survey_id: int, answers: list, current_user: dict, db: Session):
+    existing = db.query(models.SurveyResponse).filter_by(
+        survey_id=survey_id, graduate_id=current_user["id"]
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Ya has respondido esta encuesta")
         
+    survey = db.query(models.Survey).filter(models.Survey.id == survey_id).first()
+    if not survey:
+        raise HTTPException(status_code=404, detail="Encuesta no encontrada")
+
+    answers_dict = {a.question_id: a.answer for a in answers}
     new_response = models.SurveyResponse(
         survey_id=survey_id,
         graduate_id=current_user["id"],
-        answers_json=answers
+        answers_json=answers_dict
     )
     db.add(new_response)
     db.commit()
     db.refresh(new_response)
-    from app.matchmaking.client import trigger_recalcular
-    trigger_recalcular(graduate_id=current_user["id"])
-    return new_response
+    
+    adapter = HttpMatchmakingAdapter()
+    adapter.trigger_recalculate(graduate_id=current_user["id"])
+    
+    return {"detail": "Encuesta enviada"}

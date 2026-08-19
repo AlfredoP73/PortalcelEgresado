@@ -39,6 +39,13 @@ class Program(Base):
     name = Column(String, unique=True, index=True)
     job_offers = relationship("JobOffer", back_populates="program")
 
+class JobOfferSkill(Base):
+    __tablename__ = "job_offer_skills"
+    __table_args__ = {'extend_existing': True}
+    job_offer_id = Column(Integer, ForeignKey("job_offers.id", ondelete="CASCADE"), primary_key=True)
+    skill_id = Column(Integer, primary_key=True)
+    required_level = Column(String)
+
 # --- Tablas Principales Módulo 2 ---
 class Company(Base):
     __tablename__ = "companies"
@@ -64,6 +71,7 @@ class JobOffer(Base):
     functions = Column(Text, nullable=False)
     salary_min = Column(Integer)
     salary_max = Column(Integer)
+    min_experience_years = Column(Integer, default=0)
     program_id = Column(Integer, ForeignKey("programs.id"), nullable=False)
     closing_date = Column(Date, nullable=False)
     status = Column(Enum(JobOfferStatus), default=JobOfferStatus.ACTIVE)
@@ -71,6 +79,7 @@ class JobOffer(Base):
     company = relationship("Company", back_populates="job_offers")
     program = relationship("Program", back_populates="job_offers")
     applications = relationship("CandidateApplication", back_populates="job_offer")
+    skills = relationship("JobOfferSkill", cascade="all, delete-orphan")
 
 class CandidateApplication(Base):
     __tablename__ = "applications"

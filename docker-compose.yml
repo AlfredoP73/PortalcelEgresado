@@ -13,7 +13,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./backend/migration_matchmaking.sql:/docker-entrypoint-initdb.d/migration_matchmaking.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -34,6 +33,12 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@portaldelegresados.upc.edu.co}
+      FRONTEND_URL: http://localhost:5176
     depends_on:
       db:
         condition: service_healthy

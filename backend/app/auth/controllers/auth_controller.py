@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -41,6 +42,21 @@ def register(body: schemas.RegisterRequest, db: Session = Depends(get_db)):
     return auth_service.register_user(body, db)
 
 
+# ── GET /api/auth/verify ─────────────────────────────────────────────────────
+@router.get("/verify")
+def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
+    """Verifica el email del usuario usando el token enviado por correo."""
+    result = auth_service.verify_email(token, db)
+    return {"message": "Email verificado correctamente"}
+
+
+# ── POST /api/auth/resend-verification ────────────────────────────────────────
+@router.post("/resend-verification", response_model=schemas.MessageResponse)
+def resend_verification(body: schemas.ResendVerificationRequest, db: Session = Depends(get_db)):
+    """Reenvía el correo de verificación."""
+    return auth_service.resend_verification(body.email, db)
+
+
 # ── GET /api/auth/me ─────────────────────────────────────────────────────────
 @router.get("/me", response_model=schemas.UserInfo)
 def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -51,4 +67,5 @@ def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
         email=user.email,
         role_id=user.role_id,
         role_name=user.role.name,
+        email_verified=user.email_verified,
     )

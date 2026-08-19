@@ -2,26 +2,29 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Companies from './pages/Companies';
-import JobOffers from './pages/JobOffers';
-import Kanban from './pages/Kanban';
-import GraduateProfile from './pages/GraduateProfile';
-import GraduateExperience from './pages/GraduateExperience';
-import GraduateEducation from './pages/GraduateEducation';
-import JobBoard from './pages/JobBoard';
-import GraduateApplications from './pages/GraduateApplications';
-import GraduateSurveys from './pages/GraduateSurveys';
-import AdminGraduates from './pages/AdminGraduates';
-import AdminApplications from './pages/AdminApplications';
-import AdminSectors from './pages/AdminSectors';
-import AdminCities from './pages/AdminCities';
-import AdminPrograms from './pages/AdminPrograms';
-import AdminUsers from './pages/AdminUsers';
-import CompanyTalentPool from './pages/CompanyTalentPool';
-import AdminDashboard from './pages/AdminDashboard';
-import CompanyDashboard from './pages/CompanyDashboard';
-import GraduateDashboard from './pages/GraduateDashboard';
+import Login from './features/auth/pages/Login';
+import VerifyEmail from './features/auth/pages/VerifyEmail';
+import Maintenance from './pages/Maintenance';
+import Companies from './features/company/pages/Companies';
+import JobOffers from './features/company/pages/JobOffers';
+import Kanban from './features/company/pages/Kanban';
+import GraduateProfile from './features/graduate/pages/GraduateProfile';
+import GraduateExperience from './features/graduate/pages/GraduateExperience';
+import GraduateEducation from './features/graduate/pages/GraduateEducation';
+import JobBoard from './features/graduate/pages/JobBoard';
+import GraduateApplications from './features/graduate/pages/GraduateApplications';
+import GraduateSurveys from './features/graduate/pages/GraduateSurveys';
+import AdminGraduates from './features/admin/pages/AdminGraduates';
+import AdminApplications from './features/admin/pages/AdminApplications';
+import AdminSectors from './features/admin/pages/AdminSectors';
+import AdminCities from './features/admin/pages/AdminCities';
+import AdminPrograms from './features/admin/pages/AdminPrograms';
+import AdminUsers from './features/admin/pages/AdminUsers';
+import CompanyTalentPool from './features/company/pages/CompanyTalentPool';
+import AdminDashboard from './features/admin/pages/AdminDashboard';
+import CompanyDashboard from './features/company/pages/CompanyDashboard';
+import GraduateDashboard from './features/graduate/pages/GraduateDashboard';
+import AdminMatchmaking from './features/admin/pages/AdminMatchmaking';
 
 const HomeRedirect = () => {
   const rawUser = localStorage.getItem('user');
@@ -40,6 +43,8 @@ export default function App() {
       <Routes>
         {/* Pública */}
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/mantenimiento" element={<Maintenance />} />
 
         {/* Solo ADMIN */}
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -94,6 +99,10 @@ export default function App() {
           <Route
             path="/admin/users"
             element={<Layout><AdminUsers /></Layout>}
+          />
+          <Route
+            path="/admin/matchmaking"
+            element={<Layout><AdminMatchmaking /></Layout>}
           />
         </Route>
 

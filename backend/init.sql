@@ -63,6 +63,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL, -- Para autenticación JWT
     role_id INT REFERENCES roles(id) ON DELETE RESTRICT,
     is_active BOOLEAN DEFAULT TRUE,
+    email_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -77,7 +79,8 @@ CREATE TABLE graduates (
     graduation_year INT NOT NULL,
     phone VARCHAR(20),
     cv_url VARCHAR(255),
-    profile_summary TEXT
+    profile_summary TEXT,
+    profile_picture_url VARCHAR(255)
 );
 
 CREATE TABLE graduate_skills (
@@ -196,10 +199,10 @@ CREATE TABLE survey_responses (
 INSERT INTO roles (name) VALUES ('ADMIN'), ('COMPANY'), ('GRADUATE');
 
 -- Hash for 'password123' generated with bcrypt
-INSERT INTO users (email, password_hash, role_id) VALUES 
-('admin@portal.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 1),
-('empresa@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('egresado@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3);
+INSERT INTO users (email, password_hash, role_id, email_verified) VALUES 
+('admin@portal.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 1, TRUE),
+('empresa@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('egresado@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE);
 
 -- CATÁLOGOS BASE
 INSERT INTO countries (name) VALUES ('Colombia');
@@ -233,47 +236,47 @@ INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_ye
 
 
 -- MORE COMPANIES
-INSERT INTO users (email, password_hash, role_id) VALUES
-('empresa4@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa5@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa6@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa7@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa8@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa9@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa10@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa11@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa12@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa13@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa14@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa15@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa16@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa17@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa18@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa19@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa20@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa21@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa22@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa23@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa24@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa25@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa26@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa27@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa28@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa29@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa30@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa31@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa32@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa33@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa34@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa35@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa36@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa37@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa38@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa39@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa40@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa41@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa42@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2),
-('empresa43@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2);
+INSERT INTO users (email, password_hash, role_id, email_verified) VALUES
+('empresa4@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa5@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa6@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa7@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa8@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa9@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa10@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa11@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa12@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa13@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa14@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa15@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa16@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa17@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa18@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa19@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa20@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa21@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa22@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa23@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa24@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa25@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa26@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa27@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa28@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa29@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa30@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa31@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa32@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa33@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa34@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa35@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa36@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa37@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa38@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa39@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa40@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa41@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa42@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
+('empresa43@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE);
 INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
 (4, 'Empresa 4 S.A.S.', 'Descripción generada 4', 'contacto4@empresa.com', 1, 28, 'APPROVED'),
 (5, 'Empresa 5 S.A.S.', 'Descripción generada 5', 'contacto5@empresa.com', 7, 21, 'APPROVED'),
@@ -316,157 +319,157 @@ INSERT INTO companies (user_id, name, description, contact_email, sector_id, cit
 (42, 'Empresa 42 S.A.S.', 'Descripción generada 42', 'contacto42@empresa.com', 10, 23, 'APPROVED'),
 (43, 'Empresa 43 S.A.S.', 'Descripción generada 43', 'contacto43@empresa.com', 16, 20, 'APPROVED');
 -- MORE GRADUATES
-INSERT INTO users (email, password_hash, role_id) VALUES
-('egresado44@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado45@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado46@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado47@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado48@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado49@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado50@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado51@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado52@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado53@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado54@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado55@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado56@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado57@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado58@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado59@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado60@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado61@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado62@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado63@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado64@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado65@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado66@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado67@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado68@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado69@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado70@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado71@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado72@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado73@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado74@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado75@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado76@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado77@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado78@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado79@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado80@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado81@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado82@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado83@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado84@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado85@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado86@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado87@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado88@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado89@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado90@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado91@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado92@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado93@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado94@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado95@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado96@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado97@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado98@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado99@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado100@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado101@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado102@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado103@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado104@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado105@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado106@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado107@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado108@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado109@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado110@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado111@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado112@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado113@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado114@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado115@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado116@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado117@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado118@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado119@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado120@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado121@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado122@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado123@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado124@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado125@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado126@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado127@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado128@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado129@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado130@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado131@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado132@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado133@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado134@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado135@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado136@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado137@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado138@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado139@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado140@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado141@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado142@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado143@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado144@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado145@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado146@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado147@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado148@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado149@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado150@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado151@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado152@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado153@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado154@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado155@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado156@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado157@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado158@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado159@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado160@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado161@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado162@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado163@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado164@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado165@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado166@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado167@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado168@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado169@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado170@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado171@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado172@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado173@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado174@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado175@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado176@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado177@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado178@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado179@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado180@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado181@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado182@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado183@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado184@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado185@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado186@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado187@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado188@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado189@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado190@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado191@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado192@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3),
-('egresado193@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3);
+INSERT INTO users (email, password_hash, role_id, email_verified) VALUES
+('egresado44@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado45@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado46@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado47@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado48@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado49@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado50@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado51@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado52@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado53@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado54@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado55@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado56@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado57@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado58@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado59@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado60@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado61@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado62@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado63@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado64@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado65@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado66@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado67@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado68@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado69@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado70@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado71@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado72@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado73@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado74@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado75@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado76@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado77@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado78@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado79@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado80@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado81@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado82@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado83@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado84@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado85@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado86@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado87@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado88@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado89@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado90@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado91@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado92@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado93@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado94@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado95@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado96@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado97@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado98@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado99@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado100@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado101@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado102@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado103@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado104@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado105@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado106@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado107@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado108@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado109@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado110@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado111@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado112@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado113@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado114@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado115@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado116@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado117@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado118@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado119@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado120@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado121@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado122@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado123@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado124@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado125@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado126@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado127@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado128@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado129@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado130@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado131@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado132@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado133@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado134@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado135@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado136@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado137@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado138@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado139@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado140@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado141@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado142@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado143@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado144@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado145@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado146@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado147@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado148@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado149@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado150@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado151@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado152@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado153@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado154@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado155@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado156@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado157@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado158@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado159@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado160@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado161@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado162@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado163@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado164@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado165@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado166@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado167@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado168@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado169@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado170@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado171@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado172@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado173@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado174@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado175@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado176@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado177@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado178@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado179@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado180@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado181@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado182@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado183@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado184@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado185@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado186@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado187@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado188@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado189@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado190@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado191@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado192@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
+('egresado193@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE);
 INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
 (44, 'Nombre44', 'Apellido44', 11, 2022, '300000044', 'Perfil generado'),
 (45, 'Nombre45', 'Apellido45', 6, 2019, '300000045', 'Perfil generado'),
@@ -1182,3 +1185,80 @@ INSERT INTO graduate_skills (graduate_id, skill_id, proficiency_level) VALUES
 SELECT setval('job_offers_id_seq', (SELECT MAX(id) FROM job_offers));
 SELECT setval('applications_id_seq', (SELECT MAX(id) FROM applications));
 SELECT setval('skills_id_seq', (SELECT MAX(id) FROM skills));
+
+-- ==============================================================================
+-- MIGRACIÓN: MÓDULO 3 - ALGORITMO DE MATCHMAKING
+-- Ejecutar UNA sola vez sobre la base ya existente (egresados_db).
+-- No modifica init.sql porque ese script solo corre en la primera
+-- inicialización del volumen de Postgres (docker-entrypoint-initdb.d).
+--
+-- Cómo aplicarla:
+--   docker exec -i portaldel_egresado_db psql -U postgres -d egresados_db < backend/migration_matchmaking.sql
+-- ==============================================================================
+
+-- Habilidades requeridas por vacante (estructura espejo de graduate_skills)
+CREATE TABLE IF NOT EXISTS job_offer_skills (
+    job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
+    skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
+    required_level VARCHAR(50), -- 'Básico', 'Intermedio', 'Avanzado'
+    PRIMARY KEY (job_offer_id, skill_id)
+);
+
+-- Experiencia mínima requerida por la vacante
+ALTER TABLE job_offers ADD COLUMN IF NOT EXISTS min_experience_years INT DEFAULT 0;
+
+-- Resultados de match cacheados (evita recalcular en cada request de lectura)
+CREATE TABLE IF NOT EXISTS matches (
+    id SERIAL PRIMARY KEY,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
+    score NUMERIC(5,2) NOT NULL,
+    program_score NUMERIC(5,2),
+    skills_score NUMERIC(5,2),
+    experience_score NUMERIC(5,2),
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(graduate_id, job_offer_id)
+);
+
+-- Notificaciones de alta compatibilidad (Módulo 3.2)
+CREATE TABLE IF NOT EXISTS match_notifications (
+    id SERIAL PRIMARY KEY,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
+    score NUMERIC(5,2) NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- La tabla matchmaking_weights ya existe desde init.sql; solo aseguramos
+-- que exista al menos un registro con los pesos por defecto.
+INSERT INTO matchmaking_weights (program_weight, skills_weight, experience_weight)
+SELECT 0.40, 0.40, 0.20
+WHERE NOT EXISTS (SELECT 1 FROM matchmaking_weights);
+
+-- ------------------------------------------------------------------------------
+-- DATOS DUMMY para probar el algoritmo con las vacantes/egresado ya insertados
+-- en init.sql (job_offers 1 y 2, graduate user_id = 3)
+-- ------------------------------------------------------------------------------
+INSERT INTO skills (name) VALUES
+    ('React'), ('Node.js'), ('PostgreSQL'), ('Python'), ('SQL'), ('Excel avanzado')
+ON CONFLICT (name) DO NOTHING;
+
+-- Requisitos de habilidades para la vacante 1 (Desarrollador Full Stack)
+INSERT INTO job_offer_skills (job_offer_id, skill_id, required_level)
+SELECT 1, id, 'Intermedio' FROM skills WHERE name IN ('React', 'Node.js', 'PostgreSQL')
+ON CONFLICT DO NOTHING;
+
+-- Requisitos de habilidades para la vacante 2 (Analista de Datos Junior)
+INSERT INTO job_offer_skills (job_offer_id, skill_id, required_level)
+SELECT 2, id, 'Intermedio' FROM skills WHERE name IN ('Python', 'SQL', 'Excel avanzado')
+ON CONFLICT DO NOTHING;
+
+-- Experiencia mínima de cada vacante
+UPDATE job_offers SET min_experience_years = 2 WHERE id = 1;
+UPDATE job_offers SET min_experience_years = 0 WHERE id = 2;
+
+-- Habilidades del egresado de prueba (Juan Pérez, user_id = 3)
+INSERT INTO graduate_skills (graduate_id, skill_id, proficiency_level)
+SELECT 3, id, 'Intermedio' FROM skills WHERE name IN ('React', 'PostgreSQL')
+ON CONFLICT DO NOTHING;
