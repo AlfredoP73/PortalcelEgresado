@@ -18,7 +18,7 @@ class Language(Base):
 class Graduate(Base):
     __tablename__ = "graduates"
     __table_args__ = {'extend_existing': True}
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     program_id = Column(Integer, ForeignKey("programs.id"), nullable=False)

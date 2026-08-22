@@ -6,23 +6,41 @@ from sqlalchemy.orm import Session
 from app.matchmaking.models import MatchNotification
 
 
+import httpx
+
 def get_notifications(db: Session, graduate_id: int, solo_no_leidas: bool = False) -> list[dict]:
     """Lista notificaciones de afinidad enriquecidas con título de vacante y empresa."""
-    sql = """
-        SELECT mn.id, mn.graduate_id, mn.job_offer_id, mn.score, mn.is_read, mn.sent_at,
-               jo.title AS job_title,
-               co.name AS company_name
-        FROM match_notifications mn
-        JOIN job_offers jo ON jo.id = mn.job_offer_id
-        JOIN companies co ON co.user_id = jo.company_id
-        WHERE mn.graduate_id = :gid
-    """
+    query = db.query(MatchNotification).filter(MatchNotification.graduate_id == graduate_id)
     if solo_no_leidas:
-        sql += " AND mn.is_read = FALSE"
-    sql += " ORDER BY mn.sent_at DESC"
+        query = query.filter(MatchNotification.is_read == False)
+    
+    notifs = query.order_by(MatchNotification.sent_at.desc()).all()
+    
+    results = []
+    # Collect job offer IDs to fetch them
+    for n in notifs:
+        job_title = "Vacante Desconocida"
+        company_name = "Empresa Desconocida"
+        try:
+            resp = httpx.get(f"http://companies:8000/api/internal/matchmaking/jobs/{n.job_offer_id}", timeout=2.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                job_title = data.get("title", job_title)
+                company_name = data.get("company_name", company_name)
+        except Exception:
+            pass
 
-    rows = db.execute(text(sql), {"gid": graduate_id}).mappings().all()
-    return [dict(r) for r in rows]
+        results.append({
+            "id": n.id,
+            "graduate_id": n.graduate_id,
+            "job_offer_id": n.job_offer_id,
+            "score": float(n.score),
+            "is_read": n.is_read,
+            "sent_at": n.sent_at.isoformat() if n.sent_at else None,
+            "job_title": job_title,
+            "company_name": company_name
+        })
+    return results
 
 
 def get_notification(db: Session, notification_id: int) -> Optional[MatchNotification]:

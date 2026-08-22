@@ -47,12 +47,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
 ):
     """
     Dependencia reutilizable en cualquier microservicio.
-    Valida el JWT y devuelve el usuario actual.
+    Valida el JWT y devuelve el usuario actual decodificando el payload.
+    No realiza consultas a la base de datos (Stateless).
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -62,17 +62,11 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
-        if email is None:
+        user_id = payload.get("id")
+        role_id = payload.get("role_id")
+        if email is None or user_id is None or role_id is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
-    result = db.execute(
-        text("SELECT id, email, role_id FROM users WHERE email = :email"),
-        {"email": email},
-    ).fetchone()
-
-    if result is None:
-        raise credentials_exception
-
-    return {"id": result[0], "email": result[1], "role_id": result[2]}
+    return {"id": user_id, "email": email, "role_id": role_id}

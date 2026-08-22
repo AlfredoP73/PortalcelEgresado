@@ -21,6 +21,65 @@ public_router = APIRouter(
     tags=["Perfil de Egresado (Público)"]
 )
 
+internal_router = APIRouter(
+    prefix="/api/internal",
+    tags=["Internal APIs"]
+)
+
+@internal_router.get("/graduates/{graduate_id}")
+def get_graduate_internal(graduate_id: int, db: Session = Depends(get_db)):
+    from app.graduates import models
+    candidate = db.query(models.Graduate).filter(models.Graduate.user_id == graduate_id).first()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+        
+    candidate_dict = {k: v for k, v in candidate.__dict__.items() if not k.startswith('_')}
+    candidate_dict['experiences'] = [{k: v for k, v in exp.__dict__.items() if not k.startswith('_')} for exp in candidate.experiences]
+    candidate_dict['academic_histories'] = [{k: v for k, v in edu.__dict__.items() if not k.startswith('_')} for edu in candidate.academic_histories]
+    candidate_dict['certifications'] = [{k: v for k, v in cert.__dict__.items() if not k.startswith('_')} for cert in candidate.certifications]
+    
+    return candidate_dict
+
+@internal_router.get("/graduates")
+def get_all_graduates_internal(db: Session = Depends(get_db)):
+    from app.graduates import models
+    graduates = db.query(models.Graduate).all()
+    results = []
+    for g in graduates:
+        g_dict = {k: v for k, v in g.__dict__.items() if not k.startswith('_')}
+        g_dict['experiences'] = [{k: v for k, v in exp.__dict__.items() if not k.startswith('_')} for exp in g.experiences]
+        g_dict['academic_histories'] = [{k: v for k, v in edu.__dict__.items() if not k.startswith('_')} for edu in g.academic_histories]
+        g_dict['certifications'] = [{k: v for k, v in cert.__dict__.items() if not k.startswith('_')} for cert in g.certifications]
+        g_dict['skills'] = [{"skill_id": sk.skill_id, "skill_name": sk.skill.name if hasattr(sk, 'skill') and sk.skill else f"Skill {sk.skill_id}", "proficiency_level": sk.proficiency_level} for sk in g.skills]
+        results.append(g_dict)
+    return results
+
+@internal_router.get("/matchmaking/graduates")
+def get_matchmaking_graduate_ids(db: Session = Depends(get_db)):
+    from app.graduates import models
+    ids = db.query(models.Graduate.user_id).all()
+    return [r[0] for r in ids]
+
+@internal_router.get("/matchmaking/graduates/{graduate_id}")
+def get_matchmaking_graduate(graduate_id: int, db: Session = Depends(get_db)):
+    from app.graduates import models
+    g = db.query(models.Graduate).filter(models.Graduate.user_id == graduate_id).first()
+    if not g:
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    # Needs to return dictionary matching expectations of MatchScoreBuilder
+    return {
+        "user_id": g.user_id,
+        "program_id": g.program_id,
+        "experiences": [
+            {
+                "start_date": exp.start_date.isoformat() if exp.start_date else None,
+                "end_date": exp.end_date.isoformat() if exp.end_date else None,
+            } for exp in g.experiences
+        ],
+        "skills": {sk.skill_id: sk.proficiency_level for sk in g.skills}
+    }
+
 @router.post("/admin/graduates", response_model=schemas.Graduate)
 @require_roles("ADMIN")
 def admin_create_graduate(body: schemas.AdminGraduateCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):

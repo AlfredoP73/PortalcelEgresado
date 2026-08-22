@@ -4,6 +4,9 @@ from fastapi import UploadFile
 import httpx
 import os
 import uuid
+import pika
+import json
+from circuitbreaker import circuit
 
 class StoragePort(ABC):
     @abstractmethod
@@ -15,6 +18,7 @@ class MinioStorageAdapter(StoragePort):
         from app.core.s3 import MinioClient
         self.s3_client = MinioClient.get_client()
 
+    @circuit(failure_threshold=3, recovery_timeout=30)
     def upload_file(self, file: UploadFile, bucket: str, content_type: str = "application/pdf") -> str:
         try:
             self.s3_client.head_bucket(Bucket=bucket)
@@ -39,11 +43,11 @@ class MatchmakingPort(ABC):
     def trigger_recalculate(self, graduate_id: Optional[int] = None, job_offer_id: Optional[int] = None) -> bool:
         pass
 
-class HttpMatchmakingAdapter(MatchmakingPort):
+class RabbitMQMatchmakingAdapter(MatchmakingPort):
     def __init__(self):
-        self.url = os.getenv("MATCHMAKING_URL", "http://matchmaking:8000")
-        self.internal_token = os.getenv("MATCHMAKING_INTERNAL_TOKEN", "token_interno_servicios")
+        self.rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
 
+    @circuit(failure_threshold=5, recovery_timeout=60)
     def trigger_recalculate(self, graduate_id: Optional[int] = None, job_offer_id: Optional[int] = None) -> bool:
         payload = {}
         if graduate_id is not None:
@@ -54,13 +58,21 @@ class HttpMatchmakingAdapter(MatchmakingPort):
             return False
 
         try:
-            resp = httpx.post(
-                f"{self.url}/matching/recalcular",
-                json=payload,
-                headers={"X-Internal-Token": self.internal_token},
-                timeout=10.0,
+            params = pika.URLParameters(self.rabbitmq_url)
+            connection = pika.BlockingConnection(params)
+            channel = connection.channel()
+            channel.queue_declare(queue='matchmaking_queue', durable=True)
+            
+            channel.basic_publish(
+                exchange='',
+                routing_key='matchmaking_queue',
+                body=json.dumps(payload),
+                properties=pika.BasicProperties(
+                    delivery_mode=2, # make message persistent
+                )
             )
-            resp.raise_for_status()
+            connection.close()
             return True
-        except httpx.HTTPError:
+        except Exception as e:
+            print(f"Error publishing to RabbitMQ: {e}")
             return False

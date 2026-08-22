@@ -1,66 +1,26 @@
 -- ==============================================================================
--- SCRIPT DE INICIALIZACIÓN DE BASE DE DATOS (init.sql)
--- NORMALIZADO A 3FN PARA TODOS LOS MÓDULOS
+-- SCRIPT DE INICIALIZACIÓN DE BASE DE DATOS MÚLTIPLES (Database-per-Service)
 -- ==============================================================================
 
+CREATE DATABASE auth_db;
+CREATE DATABASE graduates_db;
+CREATE DATABASE companies_db;
+CREATE DATABASE matchmaking_db;
+
 -- ------------------------------------------------------------------------------
--- 0. CATÁLOGOS GLOBALES (Evitan dependencias transitivas - 3FN)
+-- AUTH DB
 -- ------------------------------------------------------------------------------
+\c auth_db
+
 CREATE TABLE roles (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL -- 'ADMIN', 'COORDINATOR', 'GRADUATE', 'COMPANY'
+    name VARCHAR(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE countries (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
-CREATE TABLE states (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    country_id INT REFERENCES countries(id) ON DELETE CASCADE
-);
-
-CREATE TABLE cities (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    state_id INT REFERENCES states(id) ON DELETE CASCADE
-);
-
-CREATE TABLE sectors (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
-CREATE TABLE faculties (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(150) UNIQUE NOT NULL
-);
-
-CREATE TABLE programs (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(150) UNIQUE NOT NULL,
-    faculty_id INT REFERENCES faculties(id) ON DELETE CASCADE
-);
-
-CREATE TABLE skills (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
-CREATE TABLE languages (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
--- ------------------------------------------------------------------------------
--- MÓDULO 4: AUTENTICACIÓN, ROLES Y DASHBOARD (Usuarios base)
--- ------------------------------------------------------------------------------
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL, -- Para autenticación JWT
+    password_hash VARCHAR(255) NOT NULL,
     role_id INT REFERENCES roles(id) ON DELETE RESTRICT,
     is_active BOOLEAN DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE,
@@ -68,174 +28,11 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ------------------------------------------------------------------------------
--- MÓDULO 1: PORTAL Y HOJA DE VIDA DEL EGRESADO
--- ------------------------------------------------------------------------------
-CREATE TABLE graduates (
-    user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    program_id INT REFERENCES programs(id) ON DELETE RESTRICT,
-    graduation_year INT NOT NULL,
-    phone VARCHAR(20),
-    cv_url VARCHAR(255),
-    profile_summary TEXT,
-    profile_picture_url VARCHAR(255)
-);
-
-CREATE TABLE graduate_skills (
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
-    proficiency_level VARCHAR(50), -- 'Básico', 'Intermedio', 'Avanzado'
-    PRIMARY KEY (graduate_id, skill_id)
-);
-
-CREATE TABLE graduate_languages (
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    language_id INT REFERENCES languages(id) ON DELETE CASCADE,
-    proficiency_level VARCHAR(50), -- 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
-    PRIMARY KEY (graduate_id, language_id)
-);
-
-CREATE TABLE work_experiences (
-    id SERIAL PRIMARY KEY,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    company_name VARCHAR(150) NOT NULL,
-    position VARCHAR(100) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    description TEXT,
-    certificate_url VARCHAR(255)
-);
-
-CREATE TABLE academic_histories (
-    id SERIAL PRIMARY KEY,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    institution VARCHAR(150) NOT NULL,
-    degree VARCHAR(150) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    diploma_url VARCHAR(255)
-);
-
-CREATE TABLE certifications (
-    id SERIAL PRIMARY KEY,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    name VARCHAR(150) NOT NULL,
-    issuing_organization VARCHAR(150) NOT NULL,
-    issue_date DATE NOT NULL
-);
-
--- ------------------------------------------------------------------------------
--- MÓDULO 2: GESTIÓN DE EMPRESAS Y OFERTAS LABORALES
--- ------------------------------------------------------------------------------
-CREATE TABLE companies (
-    user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(150) NOT NULL,
-    description TEXT,
-    contact_email VARCHAR(255) NOT NULL,
-    sector_id INT REFERENCES sectors(id) ON DELETE RESTRICT,
-    city_id INT REFERENCES cities(id) ON DELETE RESTRICT,
-    status VARCHAR(20) DEFAULT 'PENDING' -- 'PENDING', 'APPROVED', 'REJECTED'
-);
-
-CREATE TABLE job_offers (
-    id SERIAL PRIMARY KEY,
-    company_id INT REFERENCES companies(user_id) ON DELETE CASCADE,
-    title VARCHAR(150) NOT NULL,
-    description TEXT NOT NULL,
-    requirements TEXT NOT NULL,
-    functions TEXT NOT NULL,
-    salary_min NUMERIC(10, 2),
-    salary_max NUMERIC(10, 2),
-    program_id INT REFERENCES programs(id) ON DELETE RESTRICT,
-    closing_date DATE NOT NULL,
-    status VARCHAR(20) DEFAULT 'ACTIVE' -- 'ACTIVE', 'CLOSED'
-);
-
-CREATE TABLE applications (
-    id SERIAL PRIMARY KEY,
-    job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'POSTULADO' -- 'POSTULADO', 'EN_EVALUACION', 'ENTREVISTADO', 'CONTRATADO'
-);
-
--- ------------------------------------------------------------------------------
--- MÓDULO 3: ALGORITMO DE MATCHMAKING
--- ------------------------------------------------------------------------------
-CREATE TABLE matchmaking_weights (
-    id SERIAL PRIMARY KEY,
-    program_weight NUMERIC(4, 2) DEFAULT 0.40,
-    skills_weight NUMERIC(4, 2) DEFAULT 0.40,
-    experience_weight NUMERIC(4, 2) DEFAULT 0.20,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ------------------------------------------------------------------------------
--- ENCUESTAS DE EGRESADOS
--- ------------------------------------------------------------------------------
-CREATE TABLE surveys (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    questions_json JSONB NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE survey_responses (
-    id SERIAL PRIMARY KEY,
-    survey_id INT REFERENCES surveys(id) ON DELETE CASCADE,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    answers_json JSONB NOT NULL,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(survey_id, graduate_id)
-);
-
--- ==============================================================================
--- DATOS DUMMY INICIALES PARA TESTEAR JWT Y RUTAS
--- ==============================================================================
 INSERT INTO roles (name) VALUES ('ADMIN'), ('COMPANY'), ('GRADUATE');
-
--- Hash for 'password123' generated with bcrypt
 INSERT INTO users (email, password_hash, role_id, email_verified) VALUES 
 ('admin@portal.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 1, TRUE),
 ('empresa@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
 ('egresado@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE);
-
--- CATÁLOGOS BASE
-INSERT INTO countries (name) VALUES ('Colombia');
-INSERT INTO states (name, country_id) VALUES ('Cesar', 1), ('Atlántico', 1), ('Bogotá D.C.', 1);
-INSERT INTO cities (name, state_id) VALUES 
-('Valledupar', 1), ('Aguachica', 1), ('Agustín Codazzi', 1), ('Bosconia', 1), ('Chimichagua', 1), ('El Copey', 1), ('San Alberto', 1), ('Curumaní', 1), ('La Paz', 1), ('Pueblo Bello', 1),
-('Barranquilla', 2), ('Soledad', 2), ('Malambo', 2), ('Sabanalarga', 2), ('Baranoa', 2),
-('Bogotá', 3), 
-('Medellín', 1), ('Cali', 1), ('Bucaramanga', 1), ('Cartagena', 1), ('Santa Marta', 1), ('Pereira', 1), ('Manizales', 1), ('Cúcuta', 1), ('Ibagué', 1), ('Villavicencio', 1), ('Pasto', 1), ('Montería', 1), ('Valledupar', 1), ('Popayán', 1), ('Sincelejo', 1), ('Riohacha', 1), ('Tunja', 1), ('Florencia', 1), ('Quibdó', 1), ('Arauca', 1), ('Yopal', 1), ('Mocoa', 1), ('Puerto Carreño', 1), ('Inírida', 1), ('San José del Guaviare', 1), ('Mitú', 1), ('Leticia', 1), ('San Andrés', 1);
-
-INSERT INTO sectors (name) VALUES
-('Tecnología y Software'), ('Salud y Medicina'), ('Educación y Formación'), ('Finanzas y Seguros'), ('Construcción e Ingeniería'), ('Agricultura y Ganadería'),
-('Comercio Minorista (Retail)'), ('Telecomunicaciones'), ('Energía y Minería'), ('Transporte y Logística'), ('Manufactura y Producción'), ('Turismo y Hostelería'),
-('Marketing y Publicidad'), ('Consultoría Empresarial'), ('Servicios Legales'), ('Arte y Entretenimiento'), ('Medios de Comunicación'), ('Gobierno y Administración Pública'),
-('Recursos Humanos'), ('Desarrollo Inmobiliario');
-
-INSERT INTO faculties (name) VALUES
-('Ingeniería y Tecnología'), ('Ciencias de la Salud'), ('Ciencias Administrativas'), ('Derecho y Ciencias Políticas'), ('Ciencias Básicas y Educación');
-
-INSERT INTO programs (name, faculty_id) VALUES
-('Ingeniería de Sistemas', 1), ('Ingeniería Ambiental', 1), ('Ingeniería Electrónica', 1),
-('Enfermería', 2), ('Microbiología', 2), ('Instrumentación Quirúrgica', 2),
-('Administración de Empresas', 3), ('Contaduría Pública', 3), ('Comercio Internacional', 3),
-('Derecho', 4), ('Licenciatura en Matemáticas', 5);
-
-INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
-(2, 'Empresa Principal', 'Nuestra empresa ejemplo principal', 'contacto@empresa.com', 1, 1, 'APPROVED');
-
-INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
-(3, 'Juan', 'Perez', 1, 2023, '3001234567', 'Desarrollador de software egresado');
-
-
--- MORE COMPANIES
 INSERT INTO users (email, password_hash, role_id, email_verified) VALUES
 ('empresa4@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
 ('empresa5@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
@@ -277,48 +74,6 @@ INSERT INTO users (email, password_hash, role_id, email_verified) VALUES
 ('empresa41@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
 ('empresa42@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE),
 ('empresa43@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 2, TRUE);
-INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
-(4, 'Empresa 4 S.A.S.', 'Descripción generada 4', 'contacto4@empresa.com', 1, 28, 'APPROVED'),
-(5, 'Empresa 5 S.A.S.', 'Descripción generada 5', 'contacto5@empresa.com', 7, 21, 'APPROVED'),
-(6, 'Empresa 6 S.A.S.', 'Descripción generada 6', 'contacto6@empresa.com', 17, 2, 'APPROVED'),
-(7, 'Empresa 7 S.A.S.', 'Descripción generada 7', 'contacto7@empresa.com', 19, 8, 'APPROVED'),
-(8, 'Empresa 8 S.A.S.', 'Descripción generada 8', 'contacto8@empresa.com', 16, 28, 'APPROVED'),
-(9, 'Empresa 9 S.A.S.', 'Descripción generada 9', 'contacto9@empresa.com', 8, 8, 'APPROVED'),
-(10, 'Empresa 10 S.A.S.', 'Descripción generada 10', 'contacto10@empresa.com', 8, 14, 'APPROVED'),
-(11, 'Empresa 11 S.A.S.', 'Descripción generada 11', 'contacto11@empresa.com', 15, 8, 'APPROVED'),
-(12, 'Empresa 12 S.A.S.', 'Descripción generada 12', 'contacto12@empresa.com', 6, 20, 'APPROVED'),
-(13, 'Empresa 13 S.A.S.', 'Descripción generada 13', 'contacto13@empresa.com', 9, 16, 'APPROVED'),
-(14, 'Empresa 14 S.A.S.', 'Descripción generada 14', 'contacto14@empresa.com', 20, 39, 'APPROVED'),
-(15, 'Empresa 15 S.A.S.', 'Descripción generada 15', 'contacto15@empresa.com', 17, 12, 'APPROVED'),
-(16, 'Empresa 16 S.A.S.', 'Descripción generada 16', 'contacto16@empresa.com', 13, 36, 'APPROVED'),
-(17, 'Empresa 17 S.A.S.', 'Descripción generada 17', 'contacto17@empresa.com', 8, 17, 'APPROVED'),
-(18, 'Empresa 18 S.A.S.', 'Descripción generada 18', 'contacto18@empresa.com', 19, 28, 'APPROVED'),
-(19, 'Empresa 19 S.A.S.', 'Descripción generada 19', 'contacto19@empresa.com', 8, 35, 'APPROVED'),
-(20, 'Empresa 20 S.A.S.', 'Descripción generada 20', 'contacto20@empresa.com', 12, 11, 'APPROVED'),
-(21, 'Empresa 21 S.A.S.', 'Descripción generada 21', 'contacto21@empresa.com', 5, 16, 'APPROVED'),
-(22, 'Empresa 22 S.A.S.', 'Descripción generada 22', 'contacto22@empresa.com', 9, 37, 'APPROVED'),
-(23, 'Empresa 23 S.A.S.', 'Descripción generada 23', 'contacto23@empresa.com', 5, 6, 'APPROVED'),
-(24, 'Empresa 24 S.A.S.', 'Descripción generada 24', 'contacto24@empresa.com', 1, 37, 'APPROVED'),
-(25, 'Empresa 25 S.A.S.', 'Descripción generada 25', 'contacto25@empresa.com', 15, 25, 'APPROVED'),
-(26, 'Empresa 26 S.A.S.', 'Descripción generada 26', 'contacto26@empresa.com', 10, 10, 'APPROVED'),
-(27, 'Empresa 27 S.A.S.', 'Descripción generada 27', 'contacto27@empresa.com', 19, 24, 'APPROVED'),
-(28, 'Empresa 28 S.A.S.', 'Descripción generada 28', 'contacto28@empresa.com', 2, 3, 'APPROVED'),
-(29, 'Empresa 29 S.A.S.', 'Descripción generada 29', 'contacto29@empresa.com', 12, 33, 'APPROVED'),
-(30, 'Empresa 30 S.A.S.', 'Descripción generada 30', 'contacto30@empresa.com', 17, 10, 'APPROVED'),
-(31, 'Empresa 31 S.A.S.', 'Descripción generada 31', 'contacto31@empresa.com', 8, 18, 'APPROVED'),
-(32, 'Empresa 32 S.A.S.', 'Descripción generada 32', 'contacto32@empresa.com', 19, 11, 'APPROVED'),
-(33, 'Empresa 33 S.A.S.', 'Descripción generada 33', 'contacto33@empresa.com', 18, 26, 'APPROVED'),
-(34, 'Empresa 34 S.A.S.', 'Descripción generada 34', 'contacto34@empresa.com', 15, 24, 'APPROVED'),
-(35, 'Empresa 35 S.A.S.', 'Descripción generada 35', 'contacto35@empresa.com', 19, 8, 'APPROVED'),
-(36, 'Empresa 36 S.A.S.', 'Descripción generada 36', 'contacto36@empresa.com', 2, 19, 'APPROVED'),
-(37, 'Empresa 37 S.A.S.', 'Descripción generada 37', 'contacto37@empresa.com', 15, 38, 'APPROVED'),
-(38, 'Empresa 38 S.A.S.', 'Descripción generada 38', 'contacto38@empresa.com', 9, 25, 'APPROVED'),
-(39, 'Empresa 39 S.A.S.', 'Descripción generada 39', 'contacto39@empresa.com', 16, 21, 'APPROVED'),
-(40, 'Empresa 40 S.A.S.', 'Descripción generada 40', 'contacto40@empresa.com', 13, 40, 'APPROVED'),
-(41, 'Empresa 41 S.A.S.', 'Descripción generada 41', 'contacto41@empresa.com', 2, 31, 'APPROVED'),
-(42, 'Empresa 42 S.A.S.', 'Descripción generada 42', 'contacto42@empresa.com', 10, 23, 'APPROVED'),
-(43, 'Empresa 43 S.A.S.', 'Descripción generada 43', 'contacto43@empresa.com', 16, 20, 'APPROVED');
--- MORE GRADUATES
 INSERT INTO users (email, password_hash, role_id, email_verified) VALUES
 ('egresado44@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
 ('egresado45@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
@@ -470,6 +225,115 @@ INSERT INTO users (email, password_hash, role_id, email_verified) VALUES
 ('egresado191@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
 ('egresado192@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE),
 ('egresado193@ejemplo.com', '$2b$12$W/HM61gptgvPPlpJE3dGHeyYemYAD135TuJ50RZTVLox06R6kuEba', 3, TRUE);
+
+-- ------------------------------------------------------------------------------
+-- GRADUATES DB
+-- ------------------------------------------------------------------------------
+\c graduates_db
+
+CREATE TABLE faculties (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) UNIQUE NOT NULL
+);
+
+CREATE TABLE programs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) UNIQUE NOT NULL,
+    faculty_id INT REFERENCES faculties(id) ON DELETE CASCADE
+);
+
+CREATE TABLE skills (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE languages (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE graduates (
+    user_id INT PRIMARY KEY, -- NO FOREIGN KEY TO USERS
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    program_id INT REFERENCES programs(id) ON DELETE RESTRICT,
+    graduation_year INT NOT NULL,
+    phone VARCHAR(20),
+    cv_url VARCHAR(255),
+    profile_summary TEXT,
+    profile_picture_url VARCHAR(255)
+);
+
+CREATE TABLE graduate_skills (
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
+    proficiency_level VARCHAR(50),
+    PRIMARY KEY (graduate_id, skill_id)
+);
+
+CREATE TABLE graduate_languages (
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    language_id INT REFERENCES languages(id) ON DELETE CASCADE,
+    proficiency_level VARCHAR(50),
+    PRIMARY KEY (graduate_id, language_id)
+);
+
+CREATE TABLE work_experiences (
+    id SERIAL PRIMARY KEY,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    company_name VARCHAR(150) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    description TEXT,
+    certificate_url VARCHAR(255)
+);
+
+CREATE TABLE academic_histories (
+    id SERIAL PRIMARY KEY,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    institution VARCHAR(150) NOT NULL,
+    degree VARCHAR(150) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    diploma_url VARCHAR(255)
+);
+
+CREATE TABLE certifications (
+    id SERIAL PRIMARY KEY,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    issuing_organization VARCHAR(150) NOT NULL,
+    issue_date DATE NOT NULL
+);
+
+CREATE TABLE surveys (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    questions_json JSONB NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE survey_responses (
+    id SERIAL PRIMARY KEY,
+    survey_id INT REFERENCES surveys(id) ON DELETE CASCADE,
+    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
+    answers_json JSONB NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(survey_id, graduate_id)
+);
+
+INSERT INTO faculties (name) VALUES
+('Ingeniería y Tecnología'), ('Ciencias de la Salud'), ('Ciencias Administrativas'), ('Derecho y Ciencias Políticas'), ('Ciencias Básicas y Educación');
+INSERT INTO programs (name, faculty_id) VALUES
+('Ingeniería de Sistemas', 1), ('Ingeniería Ambiental', 1), ('Ingeniería Electrónica', 1),
+('Enfermería', 2), ('Microbiología', 2), ('Instrumentación Quirúrgica', 2),
+('Administración de Empresas', 3), ('Contaduría Pública', 3), ('Comercio Internacional', 3),
+('Derecho', 4), ('Licenciatura en Matemáticas', 5);
+INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
+(3, 'Juan', 'Perez', 1, 2023, '3001234567', 'Desarrollador de software egresado');
 INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_year, phone, profile_summary) VALUES
 (44, 'Nombre44', 'Apellido44', 11, 2022, '300000044', 'Perfil generado'),
 (45, 'Nombre45', 'Apellido45', 6, 2019, '300000045', 'Perfil generado'),
@@ -621,597 +485,226 @@ INSERT INTO graduates (user_id, first_name, last_name, program_id, graduation_ye
 (191, 'Nombre191', 'Apellido191', 9, 2018, '3000000191', 'Perfil generado'),
 (192, 'Nombre192', 'Apellido192', 10, 2022, '3000000192', 'Perfil generado'),
 (193, 'Nombre193', 'Apellido193', 9, 2023, '3000000193', 'Perfil generado');
--- MORE JOB OFFERS
-INSERT INTO job_offers (company_id, title, description, requirements, functions, salary_min, salary_max, program_id, closing_date, status) VALUES
-(8, 'Oferta 1', 'Desc 1', 'Req 1', 'Func 1', 1800000, 3600000, 9, '2026-12-31', 'ACTIVE'),
-(26, 'Oferta 2', 'Desc 2', 'Req 2', 'Func 2', 1500000, 2700000, 11, '2026-12-31', 'ACTIVE'),
-(27, 'Oferta 3', 'Desc 3', 'Req 3', 'Func 3', 1900000, 3400000, 6, '2026-12-31', 'ACTIVE'),
-(20, 'Oferta 4', 'Desc 4', 'Req 4', 'Func 4', 2900000, 3500000, 7, '2026-12-31', 'ACTIVE'),
-(10, 'Oferta 5', 'Desc 5', 'Req 5', 'Func 5', 1800000, 2900000, 1, '2026-12-31', 'ACTIVE'),
-(40, 'Oferta 6', 'Desc 6', 'Req 6', 'Func 6', 1800000, 3700000, 7, '2026-12-31', 'ACTIVE'),
-(6, 'Oferta 7', 'Desc 7', 'Req 7', 'Func 7', 2400000, 3400000, 3, '2026-12-31', 'ACTIVE'),
-(43, 'Oferta 8', 'Desc 8', 'Req 8', 'Func 8', 1500000, 2000000, 3, '2026-12-31', 'ACTIVE'),
-(21, 'Oferta 9', 'Desc 9', 'Req 9', 'Func 9', 2200000, 3000000, 5, '2026-12-31', 'ACTIVE'),
-(27, 'Oferta 10', 'Desc 10', 'Req 10', 'Func 10', 2400000, 3000000, 8, '2026-12-31', 'ACTIVE'),
-(33, 'Oferta 11', 'Desc 11', 'Req 11', 'Func 11', 2400000, 3100000, 9, '2026-12-31', 'ACTIVE'),
-(18, 'Oferta 12', 'Desc 12', 'Req 12', 'Func 12', 3000000, 4900000, 1, '2026-12-31', 'ACTIVE'),
-(24, 'Oferta 13', 'Desc 13', 'Req 13', 'Func 13', 2300000, 3600000, 3, '2026-12-31', 'ACTIVE'),
-(37, 'Oferta 14', 'Desc 14', 'Req 14', 'Func 14', 2300000, 2800000, 8, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 15', 'Desc 15', 'Req 15', 'Func 15', 2600000, 3100000, 8, '2026-12-31', 'ACTIVE'),
-(7, 'Oferta 16', 'Desc 16', 'Req 16', 'Func 16', 2500000, 3200000, 6, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 17', 'Desc 17', 'Req 17', 'Func 17', 1600000, 2400000, 5, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 18', 'Desc 18', 'Req 18', 'Func 18', 2500000, 4500000, 10, '2026-12-31', 'ACTIVE'),
-(31, 'Oferta 19', 'Desc 19', 'Req 19', 'Func 19', 2500000, 3000000, 6, '2026-12-31', 'ACTIVE'),
-(42, 'Oferta 20', 'Desc 20', 'Req 20', 'Func 20', 1600000, 3000000, 9, '2026-12-31', 'ACTIVE'),
-(29, 'Oferta 21', 'Desc 21', 'Req 21', 'Func 21', 2400000, 4100000, 8, '2026-12-31', 'ACTIVE'),
-(35, 'Oferta 22', 'Desc 22', 'Req 22', 'Func 22', 2200000, 3400000, 4, '2026-12-31', 'ACTIVE'),
-(11, 'Oferta 23', 'Desc 23', 'Req 23', 'Func 23', 1600000, 3100000, 7, '2026-12-31', 'ACTIVE'),
-(37, 'Oferta 24', 'Desc 24', 'Req 24', 'Func 24', 2400000, 3200000, 7, '2026-12-31', 'ACTIVE'),
-(31, 'Oferta 25', 'Desc 25', 'Req 25', 'Func 25', 1700000, 2500000, 9, '2026-12-31', 'ACTIVE'),
-(16, 'Oferta 26', 'Desc 26', 'Req 26', 'Func 26', 2000000, 3500000, 9, '2026-12-31', 'ACTIVE'),
-(35, 'Oferta 27', 'Desc 27', 'Req 27', 'Func 27', 2700000, 3500000, 10, '2026-12-31', 'ACTIVE'),
-(21, 'Oferta 28', 'Desc 28', 'Req 28', 'Func 28', 3000000, 4400000, 7, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 29', 'Desc 29', 'Req 29', 'Func 29', 2400000, 3300000, 7, '2026-12-31', 'ACTIVE'),
-(4, 'Oferta 30', 'Desc 30', 'Req 30', 'Func 30', 3000000, 4100000, 2, '2026-12-31', 'ACTIVE'),
-(38, 'Oferta 31', 'Desc 31', 'Req 31', 'Func 31', 1800000, 2400000, 4, '2026-12-31', 'ACTIVE'),
-(24, 'Oferta 32', 'Desc 32', 'Req 32', 'Func 32', 2100000, 3900000, 9, '2026-12-31', 'ACTIVE'),
-(18, 'Oferta 33', 'Desc 33', 'Req 33', 'Func 33', 2200000, 4100000, 9, '2026-12-31', 'ACTIVE'),
-(25, 'Oferta 34', 'Desc 34', 'Req 34', 'Func 34', 1900000, 3800000, 1, '2026-12-31', 'ACTIVE'),
-(38, 'Oferta 35', 'Desc 35', 'Req 35', 'Func 35', 2500000, 4400000, 2, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 36', 'Desc 36', 'Req 36', 'Func 36', 2700000, 3500000, 9, '2026-12-31', 'ACTIVE'),
-(9, 'Oferta 37', 'Desc 37', 'Req 37', 'Func 37', 1500000, 2100000, 6, '2026-12-31', 'ACTIVE'),
-(16, 'Oferta 38', 'Desc 38', 'Req 38', 'Func 38', 2900000, 4800000, 4, '2026-12-31', 'ACTIVE'),
-(25, 'Oferta 39', 'Desc 39', 'Req 39', 'Func 39', 1700000, 2400000, 2, '2026-12-31', 'ACTIVE'),
-(34, 'Oferta 40', 'Desc 40', 'Req 40', 'Func 40', 2200000, 4100000, 2, '2026-12-31', 'ACTIVE'),
-(38, 'Oferta 41', 'Desc 41', 'Req 41', 'Func 41', 2300000, 3400000, 3, '2026-12-31', 'ACTIVE'),
-(39, 'Oferta 42', 'Desc 42', 'Req 42', 'Func 42', 2700000, 3700000, 4, '2026-12-31', 'ACTIVE'),
-(5, 'Oferta 43', 'Desc 43', 'Req 43', 'Func 43', 2400000, 3200000, 1, '2026-12-31', 'ACTIVE'),
-(14, 'Oferta 44', 'Desc 44', 'Req 44', 'Func 44', 2100000, 3000000, 6, '2026-12-31', 'ACTIVE'),
-(43, 'Oferta 45', 'Desc 45', 'Req 45', 'Func 45', 1800000, 3200000, 2, '2026-12-31', 'ACTIVE'),
-(31, 'Oferta 46', 'Desc 46', 'Req 46', 'Func 46', 2800000, 3400000, 5, '2026-12-31', 'ACTIVE'),
-(33, 'Oferta 47', 'Desc 47', 'Req 47', 'Func 47', 2100000, 4100000, 1, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 48', 'Desc 48', 'Req 48', 'Func 48', 1600000, 3100000, 2, '2026-12-31', 'ACTIVE'),
-(13, 'Oferta 49', 'Desc 49', 'Req 49', 'Func 49', 2500000, 4000000, 5, '2026-12-31', 'ACTIVE'),
-(34, 'Oferta 50', 'Desc 50', 'Req 50', 'Func 50', 2800000, 4600000, 7, '2026-12-31', 'ACTIVE'),
-(22, 'Oferta 51', 'Desc 51', 'Req 51', 'Func 51', 1500000, 2400000, 3, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 52', 'Desc 52', 'Req 52', 'Func 52', 2600000, 3100000, 5, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 53', 'Desc 53', 'Req 53', 'Func 53', 3000000, 4000000, 2, '2026-12-31', 'ACTIVE'),
-(8, 'Oferta 54', 'Desc 54', 'Req 54', 'Func 54', 2200000, 3400000, 8, '2026-12-31', 'ACTIVE'),
-(20, 'Oferta 55', 'Desc 55', 'Req 55', 'Func 55', 2600000, 4500000, 8, '2026-12-31', 'ACTIVE'),
-(18, 'Oferta 56', 'Desc 56', 'Req 56', 'Func 56', 1500000, 2500000, 4, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 57', 'Desc 57', 'Req 57', 'Func 57', 2400000, 4400000, 3, '2026-12-31', 'ACTIVE'),
-(43, 'Oferta 58', 'Desc 58', 'Req 58', 'Func 58', 2300000, 3100000, 11, '2026-12-31', 'ACTIVE'),
-(7, 'Oferta 59', 'Desc 59', 'Req 59', 'Func 59', 2400000, 3200000, 3, '2026-12-31', 'ACTIVE'),
-(34, 'Oferta 60', 'Desc 60', 'Req 60', 'Func 60', 2500000, 3200000, 4, '2026-12-31', 'ACTIVE'),
-(33, 'Oferta 61', 'Desc 61', 'Req 61', 'Func 61', 2900000, 4400000, 7, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 62', 'Desc 62', 'Req 62', 'Func 62', 1700000, 2700000, 7, '2026-12-31', 'ACTIVE'),
-(22, 'Oferta 63', 'Desc 63', 'Req 63', 'Func 63', 1500000, 3000000, 9, '2026-12-31', 'ACTIVE'),
-(26, 'Oferta 64', 'Desc 64', 'Req 64', 'Func 64', 1600000, 3300000, 9, '2026-12-31', 'ACTIVE'),
-(18, 'Oferta 65', 'Desc 65', 'Req 65', 'Func 65', 2200000, 2900000, 6, '2026-12-31', 'ACTIVE'),
-(37, 'Oferta 66', 'Desc 66', 'Req 66', 'Func 66', 1700000, 3300000, 3, '2026-12-31', 'ACTIVE'),
-(8, 'Oferta 67', 'Desc 67', 'Req 67', 'Func 67', 2000000, 3900000, 5, '2026-12-31', 'ACTIVE'),
-(31, 'Oferta 68', 'Desc 68', 'Req 68', 'Func 68', 1900000, 2900000, 5, '2026-12-31', 'ACTIVE'),
-(20, 'Oferta 69', 'Desc 69', 'Req 69', 'Func 69', 2000000, 3000000, 10, '2026-12-31', 'ACTIVE'),
-(26, 'Oferta 70', 'Desc 70', 'Req 70', 'Func 70', 2700000, 3600000, 3, '2026-12-31', 'ACTIVE'),
-(7, 'Oferta 71', 'Desc 71', 'Req 71', 'Func 71', 2200000, 3100000, 2, '2026-12-31', 'ACTIVE'),
-(37, 'Oferta 72', 'Desc 72', 'Req 72', 'Func 72', 2600000, 3700000, 11, '2026-12-31', 'ACTIVE'),
-(36, 'Oferta 73', 'Desc 73', 'Req 73', 'Func 73', 1800000, 2300000, 10, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 74', 'Desc 74', 'Req 74', 'Func 74', 2000000, 2900000, 1, '2026-12-31', 'ACTIVE'),
-(39, 'Oferta 75', 'Desc 75', 'Req 75', 'Func 75', 2700000, 3300000, 11, '2026-12-31', 'ACTIVE'),
-(18, 'Oferta 76', 'Desc 76', 'Req 76', 'Func 76', 2600000, 3500000, 9, '2026-12-31', 'ACTIVE'),
-(40, 'Oferta 77', 'Desc 77', 'Req 77', 'Func 77', 1600000, 3500000, 1, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 78', 'Desc 78', 'Req 78', 'Func 78', 1600000, 2700000, 2, '2026-12-31', 'ACTIVE'),
-(41, 'Oferta 79', 'Desc 79', 'Req 79', 'Func 79', 2100000, 3800000, 9, '2026-12-31', 'ACTIVE'),
-(22, 'Oferta 80', 'Desc 80', 'Req 80', 'Func 80', 2200000, 3100000, 10, '2026-12-31', 'ACTIVE'),
-(4, 'Oferta 81', 'Desc 81', 'Req 81', 'Func 81', 2600000, 3800000, 6, '2026-12-31', 'ACTIVE'),
-(39, 'Oferta 82', 'Desc 82', 'Req 82', 'Func 82', 2000000, 3400000, 6, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 83', 'Desc 83', 'Req 83', 'Func 83', 2300000, 4300000, 8, '2026-12-31', 'ACTIVE'),
-(12, 'Oferta 84', 'Desc 84', 'Req 84', 'Func 84', 2100000, 2800000, 2, '2026-12-31', 'ACTIVE'),
-(22, 'Oferta 85', 'Desc 85', 'Req 85', 'Func 85', 2600000, 4600000, 10, '2026-12-31', 'ACTIVE'),
-(12, 'Oferta 86', 'Desc 86', 'Req 86', 'Func 86', 2100000, 3800000, 1, '2026-12-31', 'ACTIVE'),
-(10, 'Oferta 87', 'Desc 87', 'Req 87', 'Func 87', 2600000, 3600000, 9, '2026-12-31', 'ACTIVE'),
-(7, 'Oferta 88', 'Desc 88', 'Req 88', 'Func 88', 2800000, 3400000, 8, '2026-12-31', 'ACTIVE'),
-(28, 'Oferta 89', 'Desc 89', 'Req 89', 'Func 89', 2700000, 3500000, 2, '2026-12-31', 'ACTIVE'),
-(22, 'Oferta 90', 'Desc 90', 'Req 90', 'Func 90', 3000000, 4000000, 5, '2026-12-31', 'ACTIVE'),
-(26, 'Oferta 91', 'Desc 91', 'Req 91', 'Func 91', 2400000, 4000000, 11, '2026-12-31', 'ACTIVE'),
-(7, 'Oferta 92', 'Desc 92', 'Req 92', 'Func 92', 2600000, 3500000, 9, '2026-12-31', 'ACTIVE'),
-(27, 'Oferta 93', 'Desc 93', 'Req 93', 'Func 93', 2100000, 3300000, 2, '2026-12-31', 'ACTIVE'),
-(33, 'Oferta 94', 'Desc 94', 'Req 94', 'Func 94', 2100000, 3500000, 5, '2026-12-31', 'ACTIVE'),
-(13, 'Oferta 95', 'Desc 95', 'Req 95', 'Func 95', 3000000, 4700000, 4, '2026-12-31', 'ACTIVE'),
-(35, 'Oferta 96', 'Desc 96', 'Req 96', 'Func 96', 2300000, 3600000, 5, '2026-12-31', 'ACTIVE'),
-(25, 'Oferta 97', 'Desc 97', 'Req 97', 'Func 97', 3000000, 4300000, 10, '2026-12-31', 'ACTIVE'),
-(13, 'Oferta 98', 'Desc 98', 'Req 98', 'Func 98', 1500000, 3200000, 4, '2026-12-31', 'ACTIVE'),
-(9, 'Oferta 99', 'Desc 99', 'Req 99', 'Func 99', 1800000, 3500000, 9, '2026-12-31', 'ACTIVE'),
-(12, 'Oferta 100', 'Desc 100', 'Req 100', 'Func 100', 1500000, 2400000, 2, '2026-12-31', 'ACTIVE'),
-(27, 'Oferta 101', 'Desc 101', 'Req 101', 'Func 101', 2800000, 4400000, 11, '2026-12-31', 'ACTIVE'),
-(14, 'Oferta 102', 'Desc 102', 'Req 102', 'Func 102', 2500000, 4400000, 6, '2026-12-31', 'ACTIVE'),
-(9, 'Oferta 103', 'Desc 103', 'Req 103', 'Func 103', 2300000, 2900000, 9, '2026-12-31', 'ACTIVE'),
-(23, 'Oferta 104', 'Desc 104', 'Req 104', 'Func 104', 3000000, 4500000, 8, '2026-12-31', 'ACTIVE'),
-(11, 'Oferta 105', 'Desc 105', 'Req 105', 'Func 105', 1800000, 2700000, 7, '2026-12-31', 'ACTIVE'),
-(43, 'Oferta 106', 'Desc 106', 'Req 106', 'Func 106', 1600000, 3200000, 5, '2026-12-31', 'ACTIVE'),
-(36, 'Oferta 107', 'Desc 107', 'Req 107', 'Func 107', 2000000, 2800000, 11, '2026-12-31', 'ACTIVE'),
-(31, 'Oferta 108', 'Desc 108', 'Req 108', 'Func 108', 1600000, 2800000, 2, '2026-12-31', 'ACTIVE'),
-(5, 'Oferta 109', 'Desc 109', 'Req 109', 'Func 109', 2900000, 4500000, 8, '2026-12-31', 'ACTIVE'),
-(29, 'Oferta 110', 'Desc 110', 'Req 110', 'Func 110', 1900000, 2600000, 9, '2026-12-31', 'ACTIVE'),
-(37, 'Oferta 111', 'Desc 111', 'Req 111', 'Func 111', 2800000, 3800000, 4, '2026-12-31', 'ACTIVE'),
-(42, 'Oferta 112', 'Desc 112', 'Req 112', 'Func 112', 2400000, 3300000, 3, '2026-12-31', 'ACTIVE'),
-(37, 'Oferta 113', 'Desc 113', 'Req 113', 'Func 113', 2700000, 4600000, 6, '2026-12-31', 'ACTIVE'),
-(33, 'Oferta 114', 'Desc 114', 'Req 114', 'Func 114', 1900000, 2900000, 11, '2026-12-31', 'ACTIVE'),
-(20, 'Oferta 115', 'Desc 115', 'Req 115', 'Func 115', 3000000, 3800000, 8, '2026-12-31', 'ACTIVE'),
-(40, 'Oferta 116', 'Desc 116', 'Req 116', 'Func 116', 1600000, 2900000, 11, '2026-12-31', 'ACTIVE'),
-(14, 'Oferta 117', 'Desc 117', 'Req 117', 'Func 117', 2000000, 3100000, 6, '2026-12-31', 'ACTIVE'),
-(31, 'Oferta 118', 'Desc 118', 'Req 118', 'Func 118', 2700000, 4700000, 9, '2026-12-31', 'ACTIVE'),
-(21, 'Oferta 119', 'Desc 119', 'Req 119', 'Func 119', 2800000, 3400000, 11, '2026-12-31', 'ACTIVE'),
-(40, 'Oferta 120', 'Desc 120', 'Req 120', 'Func 120', 2000000, 3600000, 11, '2026-12-31', 'ACTIVE');
--- MORE APPLICATIONS
-INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
-(3, 158, 'ENTREVISTADO'),
-(118, 183, 'POSTULADO'),
-(51, 125, 'EN_EVALUACION'),
-(72, 150, 'EN_EVALUACION'),
-(89, 106, 'EN_EVALUACION'),
-(118, 69, 'POSTULADO'),
-(27, 106, 'ENTREVISTADO'),
-(77, 136, 'POSTULADO'),
-(1, 173, 'EN_EVALUACION'),
-(14, 143, 'POSTULADO'),
-(119, 187, 'EN_EVALUACION'),
-(89, 136, 'POSTULADO'),
-(39, 45, 'ENTREVISTADO'),
-(21, 84, 'ENTREVISTADO'),
-(92, 170, 'POSTULADO'),
-(83, 143, 'ENTREVISTADO'),
-(105, 185, 'POSTULADO'),
-(43, 178, 'ENTREVISTADO'),
-(80, 137, 'EN_EVALUACION'),
-(28, 132, 'CONTRATADO'),
-(67, 108, 'EN_EVALUACION'),
-(92, 94, 'POSTULADO'),
-(66, 125, 'EN_EVALUACION'),
-(77, 152, 'EN_EVALUACION'),
-(9, 140, 'POSTULADO'),
-(3, 108, 'POSTULADO'),
-(67, 91, 'POSTULADO'),
-(87, 88, 'POSTULADO'),
-(51, 80, 'POSTULADO'),
-(66, 158, 'POSTULADO'),
-(3, 64, 'CONTRATADO'),
-(74, 89, 'POSTULADO'),
-(81, 52, 'CONTRATADO'),
-(48, 153, 'EN_EVALUACION'),
-(51, 174, 'CONTRATADO'),
-(112, 74, 'EN_EVALUACION'),
-(85, 91, 'POSTULADO'),
-(27, 125, 'ENTREVISTADO'),
-(47, 50, 'POSTULADO'),
-(19, 176, 'POSTULADO'),
-(103, 172, 'EN_EVALUACION'),
-(69, 58, 'EN_EVALUACION'),
-(83, 159, 'POSTULADO'),
-(74, 134, 'CONTRATADO'),
-(13, 93, 'POSTULADO'),
-(52, 44, 'EN_EVALUACION'),
-(58, 60, 'ENTREVISTADO'),
-(6, 131, 'POSTULADO'),
-(5, 181, 'CONTRATADO'),
-(36, 128, 'ENTREVISTADO'),
-(111, 153, 'EN_EVALUACION'),
-(34, 46, 'POSTULADO'),
-(107, 57, 'POSTULADO'),
-(37, 140, 'POSTULADO'),
-(49, 72, 'POSTULADO'),
-(60, 47, 'EN_EVALUACION'),
-(41, 112, 'POSTULADO'),
-(68, 104, 'POSTULADO'),
-(26, 129, 'EN_EVALUACION'),
-(113, 82, 'POSTULADO'),
-(70, 168, 'POSTULADO'),
-(87, 147, 'POSTULADO'),
-(3, 106, 'POSTULADO'),
-(26, 82, 'ENTREVISTADO'),
-(86, 147, 'EN_EVALUACION'),
-(14, 105, 'POSTULADO'),
-(43, 103, 'EN_EVALUACION'),
-(114, 141, 'POSTULADO'),
-(91, 85, 'CONTRATADO'),
-(100, 123, 'ENTREVISTADO'),
-(117, 149, 'POSTULADO'),
-(85, 57, 'EN_EVALUACION'),
-(84, 155, 'EN_EVALUACION'),
-(81, 85, 'EN_EVALUACION'),
-(18, 153, 'POSTULADO'),
-(87, 161, 'EN_EVALUACION'),
-(40, 131, 'EN_EVALUACION'),
-(98, 183, 'POSTULADO'),
-(51, 84, 'EN_EVALUACION'),
-(73, 49, 'POSTULADO'),
-(14, 44, 'POSTULADO'),
-(107, 146, 'EN_EVALUACION'),
-(119, 170, 'POSTULADO'),
-(106, 76, 'EN_EVALUACION'),
-(116, 113, 'EN_EVALUACION'),
-(85, 133, 'ENTREVISTADO'),
-(75, 79, 'CONTRATADO'),
-(21, 143, 'CONTRATADO'),
-(105, 126, 'ENTREVISTADO'),
-(89, 161, 'POSTULADO'),
-(17, 51, 'POSTULADO'),
-(38, 142, 'ENTREVISTADO'),
-(118, 167, 'ENTREVISTADO'),
-(100, 101, 'ENTREVISTADO'),
-(115, 61, 'EN_EVALUACION'),
-(65, 93, 'EN_EVALUACION'),
-(105, 180, 'POSTULADO'),
-(55, 69, 'POSTULADO'),
-(62, 60, 'POSTULADO'),
-(53, 156, 'EN_EVALUACION'),
-(73, 191, 'EN_EVALUACION'),
-(116, 180, 'EN_EVALUACION'),
-(28, 171, 'ENTREVISTADO'),
-(22, 129, 'POSTULADO'),
-(76, 48, 'EN_EVALUACION'),
-(110, 140, 'ENTREVISTADO'),
-(114, 95, 'EN_EVALUACION'),
-(47, 74, 'EN_EVALUACION'),
-(13, 84, 'ENTREVISTADO'),
-(27, 147, 'POSTULADO'),
-(83, 124, 'POSTULADO'),
-(104, 97, 'EN_EVALUACION'),
-(68, 71, 'POSTULADO'),
-(59, 52, 'POSTULADO'),
-(85, 114, 'ENTREVISTADO'),
-(73, 128, 'POSTULADO'),
-(97, 54, 'ENTREVISTADO'),
-(68, 138, 'ENTREVISTADO'),
-(95, 94, 'ENTREVISTADO'),
-(38, 167, 'POSTULADO'),
-(94, 102, 'POSTULADO'),
-(27, 187, 'EN_EVALUACION'),
-(105, 69, 'POSTULADO'),
-(111, 63, 'ENTREVISTADO'),
-(10, 135, 'ENTREVISTADO'),
-(91, 86, 'POSTULADO'),
-(11, 49, 'EN_EVALUACION'),
-(114, 49, 'POSTULADO'),
-(4, 45, 'EN_EVALUACION'),
-(83, 137, 'POSTULADO'),
-(101, 74, 'EN_EVALUACION'),
-(58, 101, 'POSTULADO'),
-(32, 140, 'EN_EVALUACION'),
-(113, 153, 'ENTREVISTADO'),
-(54, 151, 'EN_EVALUACION'),
-(64, 111, 'POSTULADO'),
-(70, 114, 'ENTREVISTADO'),
-(115, 149, 'EN_EVALUACION'),
-(98, 64, 'POSTULADO'),
-(90, 66, 'ENTREVISTADO'),
-(64, 152, 'ENTREVISTADO'),
-(75, 54, 'EN_EVALUACION'),
-(56, 61, 'ENTREVISTADO'),
-(24, 134, 'POSTULADO'),
-(69, 88, 'POSTULADO'),
-(50, 120, 'ENTREVISTADO'),
-(105, 74, 'EN_EVALUACION'),
-(71, 62, 'CONTRATADO'),
-(99, 172, 'POSTULADO'),
-(57, 148, 'EN_EVALUACION'),
-(45, 182, 'ENTREVISTADO'),
-(5, 110, 'POSTULADO'),
-(37, 169, 'EN_EVALUACION'),
-(110, 56, 'POSTULADO'),
-(106, 152, 'EN_EVALUACION'),
-(62, 101, 'POSTULADO'),
-(23, 106, 'ENTREVISTADO'),
-(38, 159, 'POSTULADO'),
-(65, 51, 'POSTULADO'),
-(13, 120, 'ENTREVISTADO'),
-(2, 75, 'EN_EVALUACION'),
-(10, 185, 'POSTULADO'),
-(39, 186, 'POSTULADO'),
-(7, 75, 'ENTREVISTADO'),
-(81, 192, 'ENTREVISTADO'),
-(76, 144, 'ENTREVISTADO'),
-(93, 163, 'POSTULADO'),
-(66, 118, 'POSTULADO'),
-(57, 118, 'EN_EVALUACION'),
-(102, 150, 'POSTULADO'),
-(9, 177, 'POSTULADO'),
-(87, 163, 'POSTULADO'),
-(37, 62, 'EN_EVALUACION'),
-(85, 99, 'EN_EVALUACION'),
-(26, 154, 'CONTRATADO'),
-(74, 147, 'POSTULADO'),
-(29, 157, 'ENTREVISTADO'),
-(100, 121, 'ENTREVISTADO'),
-(33, 48, 'POSTULADO'),
-(8, 170, 'EN_EVALUACION'),
-(13, 54, 'CONTRATADO'),
-(87, 116, 'CONTRATADO'),
-(45, 137, 'POSTULADO'),
-(120, 70, 'EN_EVALUACION'),
-(55, 132, 'POSTULADO'),
-(119, 114, 'EN_EVALUACION'),
-(117, 118, 'ENTREVISTADO'),
-(51, 166, 'POSTULADO'),
-(91, 171, 'EN_EVALUACION'),
-(120, 127, 'POSTULADO'),
-(69, 159, 'ENTREVISTADO'),
-(49, 168, 'POSTULADO'),
-(23, 161, 'ENTREVISTADO'),
-(51, 152, 'EN_EVALUACION'),
-(86, 139, 'CONTRATADO'),
-(50, 99, 'EN_EVALUACION'),
-(11, 98, 'POSTULADO'),
-(1, 146, 'EN_EVALUACION'),
-(113, 86, 'POSTULADO'),
-(85, 158, 'EN_EVALUACION'),
-(15, 158, 'POSTULADO'),
-(118, 115, 'POSTULADO'),
-(10, 56, 'POSTULADO'),
-(80, 173, 'ENTREVISTADO'),
-(76, 51, 'POSTULADO'),
-(30, 97, 'EN_EVALUACION'),
-(25, 140, 'CONTRATADO'),
-(96, 53, 'EN_EVALUACION'),
-(47, 180, 'POSTULADO'),
-(101, 64, 'CONTRATADO'),
-(28, 98, 'EN_EVALUACION'),
-(110, 122, 'ENTREVISTADO'),
-(79, 131, 'POSTULADO'),
-(6, 185, 'CONTRATADO'),
-(113, 170, 'ENTREVISTADO'),
-(44, 141, 'POSTULADO'),
-(27, 131, 'EN_EVALUACION'),
-(120, 183, 'EN_EVALUACION'),
-(35, 133, 'POSTULADO'),
-(105, 140, 'EN_EVALUACION'),
-(7, 144, 'POSTULADO'),
-(8, 120, 'EN_EVALUACION'),
-(66, 189, 'POSTULADO'),
-(23, 63, 'POSTULADO'),
-(88, 164, 'ENTREVISTADO'),
-(51, 93, 'POSTULADO'),
-(105, 94, 'ENTREVISTADO'),
-(9, 59, 'CONTRATADO'),
-(81, 87, 'POSTULADO'),
-(39, 98, 'EN_EVALUACION'),
-(97, 92, 'CONTRATADO'),
-(44, 171, 'EN_EVALUACION'),
-(18, 52, 'POSTULADO'),
-(61, 129, 'ENTREVISTADO'),
-(62, 131, 'CONTRATADO'),
-(31, 180, 'ENTREVISTADO'),
-(16, 89, 'ENTREVISTADO'),
-(108, 122, 'EN_EVALUACION'),
-(13, 80, 'EN_EVALUACION'),
-(64, 84, 'POSTULADO'),
-(28, 153, 'POSTULADO'),
-(56, 137, 'EN_EVALUACION'),
-(28, 69, 'POSTULADO'),
-(67, 47, 'POSTULADO'),
-(12, 110, 'POSTULADO'),
-(120, 153, 'POSTULADO'),
-(119, 104, 'POSTULADO'),
-(106, 112, 'EN_EVALUACION'),
-(115, 189, 'CONTRATADO'),
-(65, 191, 'ENTREVISTADO'),
-(95, 125, 'POSTULADO'),
-(49, 48, 'EN_EVALUACION'),
-(119, 83, 'EN_EVALUACION'),
-(44, 82, 'POSTULADO'),
-(101, 53, 'ENTREVISTADO'),
-(40, 106, 'POSTULADO'),
-(47, 62, 'POSTULADO'),
-(22, 61, 'ENTREVISTADO'),
-(97, 147, 'ENTREVISTADO'),
-(80, 142, 'ENTREVISTADO'),
-(77, 124, 'POSTULADO'),
-(109, 150, 'EN_EVALUACION'),
-(120, 91, 'EN_EVALUACION'),
-(111, 106, 'CONTRATADO'),
-(113, 58, 'ENTREVISTADO'),
-(68, 132, 'ENTREVISTADO'),
-(120, 49, 'EN_EVALUACION'),
-(79, 138, 'POSTULADO'),
-(15, 166, 'POSTULADO'),
-(41, 89, 'CONTRATADO'),
-(80, 111, 'POSTULADO'),
-(101, 128, 'EN_EVALUACION'),
-(81, 182, 'EN_EVALUACION'),
-(81, 181, 'POSTULADO'),
-(70, 153, 'POSTULADO'),
-(18, 83, 'ENTREVISTADO'),
-(61, 61, 'ENTREVISTADO'),
-(21, 107, 'POSTULADO'),
-(18, 127, 'EN_EVALUACION'),
-(115, 173, 'ENTREVISTADO'),
-(9, 86, 'ENTREVISTADO'),
-(112, 99, 'CONTRATADO'),
-(71, 56, 'ENTREVISTADO'),
-(18, 65, 'ENTREVISTADO'),
-(15, 171, 'ENTREVISTADO'),
-(8, 177, 'POSTULADO'),
-(14, 130, 'EN_EVALUACION'),
-(41, 161, 'EN_EVALUACION'),
-(45, 164, 'POSTULADO'),
-(3, 80, 'POSTULADO'),
-(114, 187, 'POSTULADO'),
-(79, 112, 'POSTULADO'),
-(100, 102, 'EN_EVALUACION'),
-(89, 59, 'POSTULADO'),
-(1, 55, 'EN_EVALUACION'),
-(64, 177, 'ENTREVISTADO'),
-(61, 165, 'ENTREVISTADO'),
-(76, 111, 'ENTREVISTADO'),
-(46, 187, 'POSTULADO'),
-(101, 165, 'POSTULADO'),
-(37, 180, 'EN_EVALUACION'),
-(97, 161, 'EN_EVALUACION'),
-(103, 59, 'EN_EVALUACION'),
-(89, 93, 'POSTULADO'),
-(115, 168, 'EN_EVALUACION'),
-(64, 82, 'POSTULADO'),
-(100, 92, 'CONTRATADO'),
-(93, 46, 'POSTULADO'),
-(88, 134, 'EN_EVALUACION'),
-(63, 134, 'POSTULADO'),
-(63, 172, 'POSTULADO'),
-(19, 88, 'POSTULADO'),
-(87, 57, 'CONTRATADO'),
-(33, 147, 'POSTULADO'),
-(51, 150, 'ENTREVISTADO'),
-(100, 147, 'EN_EVALUACION'),
-(65, 81, 'POSTULADO'),
-(96, 50, 'POSTULADO'),
-(48, 149, 'POSTULADO'),
-(49, 97, 'POSTULADO'),
-(30, 180, 'POSTULADO'),
-(58, 163, 'POSTULADO'),
-(8, 144, 'POSTULADO'),
-(22, 154, 'POSTULADO'),
-(78, 134, 'POSTULADO'),
-(10, 96, 'POSTULADO'),
-(107, 71, 'POSTULADO'),
-(92, 192, 'POSTULADO'),
-(20, 177, 'EN_EVALUACION'),
-(119, 185, 'ENTREVISTADO'),
-(1, 96, 'ENTREVISTADO'),
-(11, 134, 'POSTULADO'),
-(97, 97, 'POSTULADO'),
-(36, 163, 'CONTRATADO'),
-(11, 188, 'POSTULADO'),
-(103, 190, 'POSTULADO'),
-(29, 154, 'POSTULADO'),
-(84, 169, 'CONTRATADO'),
-(22, 130, 'ENTREVISTADO'),
-(88, 128, 'EN_EVALUACION'),
-(120, 74, 'EN_EVALUACION'),
-(88, 150, 'EN_EVALUACION'),
-(64, 115, 'POSTULADO'),
-(104, 138, 'POSTULADO'),
-(40, 190, 'ENTREVISTADO'),
-(115, 139, 'POSTULADO'),
-(110, 63, 'EN_EVALUACION'),
-(17, 181, 'POSTULADO'),
-(119, 62, 'EN_EVALUACION'),
-(99, 112, 'POSTULADO'),
-(14, 185, 'POSTULADO'),
-(58, 92, 'ENTREVISTADO'),
-(35, 107, 'ENTREVISTADO'),
-(7, 44, 'ENTREVISTADO'),
-(31, 79, 'POSTULADO'),
-(78, 141, 'CONTRATADO'),
-(10, 44, 'EN_EVALUACION'),
-(42, 97, 'EN_EVALUACION'),
-(72, 120, 'POSTULADO'),
-(32, 153, 'ENTREVISTADO'),
-(78, 92, 'EN_EVALUACION'),
-(111, 88, 'ENTREVISTADO'),
-(58, 192, 'ENTREVISTADO'),
-(34, 123, 'POSTULADO'),
-(70, 49, 'EN_EVALUACION'),
-(49, 133, 'ENTREVISTADO'),
-(60, 50, 'EN_EVALUACION'),
-(85, 61, 'EN_EVALUACION'),
-(10, 169, 'ENTREVISTADO'),
-(102, 149, 'ENTREVISTADO'),
-(31, 116, 'EN_EVALUACION'),
-(81, 61, 'EN_EVALUACION'),
-(97, 85, 'POSTULADO'),
-(78, 59, 'ENTREVISTADO'),
-(39, 61, 'ENTREVISTADO'),
-(10, 48, 'EN_EVALUACION'),
-(34, 155, 'EN_EVALUACION'),
-(74, 170, 'EN_EVALUACION'),
-(66, 138, 'POSTULADO'),
-(29, 75, 'ENTREVISTADO'),
-(4, 103, 'POSTULADO'),
-(69, 106, 'CONTRATADO'),
-(4, 56, 'EN_EVALUACION'),
-(102, 79, 'POSTULADO'),
-(83, 149, 'EN_EVALUACION'),
-(14, 182, 'POSTULADO'),
-(112, 119, 'POSTULADO'),
-(32, 77, 'POSTULADO'),
-(22, 179, 'ENTREVISTADO'),
-(50, 132, 'CONTRATADO'),
-(113, 75, 'POSTULADO'),
-(30, 156, 'POSTULADO'),
-(49, 143, 'POSTULADO'),
-(83, 72, 'POSTULADO'),
-(104, 107, 'POSTULADO'),
-(8, 91, 'EN_EVALUACION');
--- Insert offers for empresa@ejemplo.com (user_id = 2)
-INSERT INTO job_offers (id, company_id, title, description, requirements, functions, salary_min, salary_max, program_id, closing_date, status) VALUES
-(9001, 2, 'Desarrollador Fullstack Senior', 'Descripción', 'React, Node', 'Codear', 4000000, 6000000, 1, '2026-12-31', 'ACTIVE'),
-(9002, 2, 'Ingeniero de Datos', 'Descripción', 'Python, SQL', 'Pipelines', 3500000, 5000000, 1, '2026-12-31', 'ACTIVE'),
-(9003, 2, 'Líder Técnico', 'Descripción', 'Arquitectura', 'Liderar', 5500000, 8000000, 1, '2026-12-31', 'ACTIVE');
 
--- Insert applications to these offers from random graduates (user_id 44 to 60)
-INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
-(9001, 44, 'POSTULADO'),
-(9001, 45, 'POSTULADO'),
-(9001, 46, 'EN_EVALUACION'),
-(9001, 47, 'EN_EVALUACION'),
-(9001, 48, 'ENTREVISTADO'),
-(9001, 49, 'ENTREVISTADO'),
-(9001, 50, 'CONTRATADO'),
+INSERT INTO skills (name) VALUES
+    ('React'), ('Node.js'), ('PostgreSQL'), ('Python'), ('SQL'), ('Excel avanzado')
+ON CONFLICT (name) DO NOTHING;
 
-(9002, 51, 'POSTULADO'),
-(9002, 52, 'EN_EVALUACION'),
-(9002, 53, 'ENTREVISTADO'),
+INSERT INTO graduate_skills (graduate_id, skill_id, proficiency_level)
+SELECT 3, id, 'Intermedio' FROM skills WHERE name IN ('React', 'PostgreSQL')
+ON CONFLICT DO NOTHING;
 
-(9003, 54, 'POSTULADO'),
-(9003, 55, 'CONTRATADO');
+-- ------------------------------------------------------------------------------
+-- COMPANIES DB
+-- ------------------------------------------------------------------------------
+\c companies_db
 
--- Insert applications FOR egresado@ejemplo.com (user_id = 3) to some random offers
-INSERT INTO applications (job_offer_id, graduate_id, status) VALUES
-(1, 3, 'POSTULADO'),
-(2, 3, 'EN_EVALUACION'),
-(3, 3, 'ENTREVISTADO'),
-(4, 3, 'POSTULADO'),
-(5, 3, 'CONTRATADO');
+CREATE TABLE countries (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
 
--- Insert skills for egresado@ejemplo.com (user_id = 3) to show up in Radar
-INSERT INTO skills (id, name) VALUES (9001, 'React'), (9002, 'Node.js'), (9003, 'Python'), (9004, 'Docker'), (9005, 'SQL') ON CONFLICT DO NOTHING;
-INSERT INTO graduate_skills (graduate_id, skill_id, proficiency_level) VALUES
-(3, 9001, 'Avanzado'),
-(3, 9002, 'Intermedio'),
-(3, 9003, 'Básico'),
-(3, 9004, 'Avanzado'),
-(3, 9005, 'Intermedio');
+CREATE TABLE states (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    country_id INT REFERENCES countries(id) ON DELETE CASCADE
+);
 
--- Update sequences just in case
-SELECT setval('job_offers_id_seq', (SELECT MAX(id) FROM job_offers));
-SELECT setval('applications_id_seq', (SELECT MAX(id) FROM applications));
-SELECT setval('skills_id_seq', (SELECT MAX(id) FROM skills));
+CREATE TABLE cities (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    state_id INT REFERENCES states(id) ON DELETE CASCADE
+);
 
--- ==============================================================================
--- MIGRACIÓN: MÓDULO 3 - ALGORITMO DE MATCHMAKING
--- Ejecutar UNA sola vez sobre la base ya existente (egresados_db).
--- No modifica init.sql porque ese script solo corre en la primera
--- inicialización del volumen de Postgres (docker-entrypoint-initdb.d).
---
--- Cómo aplicarla:
---   docker exec -i portaldel_egresado_db psql -U postgres -d egresados_db < backend/migration_matchmaking.sql
--- ==============================================================================
+CREATE TABLE sectors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
 
--- Habilidades requeridas por vacante (estructura espejo de graduate_skills)
-CREATE TABLE IF NOT EXISTS job_offer_skills (
+CREATE TABLE faculties (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) UNIQUE NOT NULL
+);
+
+CREATE TABLE programs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) UNIQUE NOT NULL,
+    faculty_id INT REFERENCES faculties(id) ON DELETE CASCADE
+);
+
+CREATE TABLE companies (
+    user_id INT PRIMARY KEY, -- NO FOREIGN KEY TO USERS
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    contact_email VARCHAR(255) NOT NULL,
+    sector_id INT REFERENCES sectors(id) ON DELETE RESTRICT,
+    city_id INT REFERENCES cities(id) ON DELETE RESTRICT,
+    status VARCHAR(20) DEFAULT 'PENDING'
+);
+
+CREATE TABLE job_offers (
+    id SERIAL PRIMARY KEY,
+    company_id INT REFERENCES companies(user_id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    description TEXT NOT NULL,
+    requirements TEXT NOT NULL,
+    functions TEXT NOT NULL,
+    salary_min NUMERIC(10, 2),
+    salary_max NUMERIC(10, 2),
+    min_experience_years INT DEFAULT 0,
+    program_id INT REFERENCES programs(id) ON DELETE RESTRICT,
+    closing_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'ACTIVE'
+);
+
+
+CREATE TABLE skills (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE job_offer_skills (
     job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
     skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
-    required_level VARCHAR(50), -- 'Básico', 'Intermedio', 'Avanzado'
+    required_level VARCHAR(50),
     PRIMARY KEY (job_offer_id, skill_id)
 );
 
--- Experiencia mínima requerida por la vacante
-ALTER TABLE job_offers ADD COLUMN IF NOT EXISTS min_experience_years INT DEFAULT 0;
-
--- Resultados de match cacheados (evita recalcular en cada request de lectura)
-CREATE TABLE IF NOT EXISTS matches (
+CREATE TABLE applications (
     id SERIAL PRIMARY KEY,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
     job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
+    graduate_id INT NOT NULL, -- NO FOREIGN KEY TO GRADUATES
+    application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'POSTULADO'
+);
+
+INSERT INTO countries (name) VALUES ('Colombia');
+INSERT INTO states (name, country_id) VALUES ('Cesar', 1), ('Atlántico', 1), ('Bogotá D.C.', 1);
+INSERT INTO cities (name, state_id) VALUES 
+('Valledupar', 1), ('Aguachica', 1), ('Agustín Codazzi', 1), ('Bosconia', 1), ('Chimichagua', 1), ('El Copey', 1), ('San Alberto', 1), ('Curumaní', 1), ('La Paz', 1), ('Pueblo Bello', 1),
+('Barranquilla', 2), ('Soledad', 2), ('Malambo', 2), ('Sabanalarga', 2), ('Baranoa', 2),
+('Bogotá', 3), 
+('Medellín', 1), ('Cali', 1), ('Bucaramanga', 1), ('Cartagena', 1), ('Santa Marta', 1), ('Pereira', 1), ('Manizales', 1), ('Cúcuta', 1), ('Ibagué', 1), ('Villavicencio', 1), ('Pasto', 1), ('Montería', 1), ('Valledupar', 1), ('Popayán', 1), ('Sincelejo', 1), ('Riohacha', 1), ('Tunja', 1), ('Florencia', 1), ('Quibdó', 1), ('Arauca', 1), ('Yopal', 1), ('Mocoa', 1), ('Puerto Carreño', 1), ('Inírida', 1), ('San José del Guaviare', 1), ('Mitú', 1), ('Leticia', 1), ('San Andrés', 1);
+INSERT INTO sectors (name) VALUES
+('Tecnología y Software'), ('Salud y Medicina'), ('Educación y Formación'), ('Finanzas y Seguros'), ('Construcción e Ingeniería'), ('Agricultura y Ganadería'),
+('Comercio Minorista (Retail)'), ('Telecomunicaciones'), ('Energía y Minería'), ('Transporte y Logística'), ('Manufactura y Producción'), ('Turismo y Hostelería'),
+('Marketing y Publicidad'), ('Consultoría Empresarial'), ('Servicios Legales'), ('Arte y Entretenimiento'), ('Medios de Comunicación'), ('Gobierno y Administración Pública'),
+('Recursos Humanos'), ('Desarrollo Inmobiliario');
+INSERT INTO faculties (name) VALUES
+('Ingeniería y Tecnología'), ('Ciencias de la Salud'), ('Ciencias Administrativas'), ('Derecho y Ciencias Políticas'), ('Ciencias Básicas y Educación');
+INSERT INTO programs (name, faculty_id) VALUES
+('Ingeniería de Sistemas', 1), ('Ingeniería Ambiental', 1), ('Ingeniería Electrónica', 1),
+('Enfermería', 2), ('Microbiología', 2), ('Instrumentación Quirúrgica', 2),
+('Administración de Empresas', 3), ('Contaduría Pública', 3), ('Comercio Internacional', 3),
+('Derecho', 4), ('Licenciatura en Matemáticas', 5);
+INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
+(2, 'Empresa Principal', 'Nuestra empresa ejemplo principal', 'contacto@empresa.com', 1, 1, 'APPROVED');
+INSERT INTO companies (user_id, name, description, contact_email, sector_id, city_id, status) VALUES
+(4, 'Empresa 4 S.A.S.', 'Descripción generada 4', 'contacto4@empresa.com', 1, 28, 'APPROVED'),
+(5, 'Empresa 5 S.A.S.', 'Descripción generada 5', 'contacto5@empresa.com', 7, 21, 'APPROVED'),
+(6, 'Empresa 6 S.A.S.', 'Descripción generada 6', 'contacto6@empresa.com', 17, 2, 'APPROVED'),
+(7, 'Empresa 7 S.A.S.', 'Descripción generada 7', 'contacto7@empresa.com', 19, 8, 'APPROVED'),
+(8, 'Empresa 8 S.A.S.', 'Descripción generada 8', 'contacto8@empresa.com', 16, 28, 'APPROVED'),
+(9, 'Empresa 9 S.A.S.', 'Descripción generada 9', 'contacto9@empresa.com', 8, 8, 'APPROVED'),
+(10, 'Empresa 10 S.A.S.', 'Descripción generada 10', 'contacto10@empresa.com', 8, 14, 'APPROVED'),
+(11, 'Empresa 11 S.A.S.', 'Descripción generada 11', 'contacto11@empresa.com', 15, 8, 'APPROVED'),
+(12, 'Empresa 12 S.A.S.', 'Descripción generada 12', 'contacto12@empresa.com', 6, 20, 'APPROVED'),
+(13, 'Empresa 13 S.A.S.', 'Descripción generada 13', 'contacto13@empresa.com', 9, 16, 'APPROVED'),
+(14, 'Empresa 14 S.A.S.', 'Descripción generada 14', 'contacto14@empresa.com', 20, 39, 'APPROVED'),
+(15, 'Empresa 15 S.A.S.', 'Descripción generada 15', 'contacto15@empresa.com', 17, 12, 'APPROVED'),
+(16, 'Empresa 16 S.A.S.', 'Descripción generada 16', 'contacto16@empresa.com', 13, 36, 'APPROVED'),
+(17, 'Empresa 17 S.A.S.', 'Descripción generada 17', 'contacto17@empresa.com', 8, 17, 'APPROVED'),
+(18, 'Empresa 18 S.A.S.', 'Descripción generada 18', 'contacto18@empresa.com', 19, 28, 'APPROVED'),
+(19, 'Empresa 19 S.A.S.', 'Descripción generada 19', 'contacto19@empresa.com', 8, 35, 'APPROVED'),
+(20, 'Empresa 20 S.A.S.', 'Descripción generada 20', 'contacto20@empresa.com', 12, 11, 'APPROVED'),
+(21, 'Empresa 21 S.A.S.', 'Descripción generada 21', 'contacto21@empresa.com', 5, 16, 'APPROVED'),
+(22, 'Empresa 22 S.A.S.', 'Descripción generada 22', 'contacto22@empresa.com', 9, 37, 'APPROVED'),
+(23, 'Empresa 23 S.A.S.', 'Descripción generada 23', 'contacto23@empresa.com', 5, 6, 'APPROVED'),
+(24, 'Empresa 24 S.A.S.', 'Descripción generada 24', 'contacto24@empresa.com', 1, 37, 'APPROVED'),
+(25, 'Empresa 25 S.A.S.', 'Descripción generada 25', 'contacto25@empresa.com', 15, 25, 'APPROVED'),
+(26, 'Empresa 26 S.A.S.', 'Descripción generada 26', 'contacto26@empresa.com', 10, 10, 'APPROVED'),
+(27, 'Empresa 27 S.A.S.', 'Descripción generada 27', 'contacto27@empresa.com', 19, 24, 'APPROVED'),
+(28, 'Empresa 28 S.A.S.', 'Descripción generada 28', 'contacto28@empresa.com', 2, 3, 'APPROVED'),
+(29, 'Empresa 29 S.A.S.', 'Descripción generada 29', 'contacto29@empresa.com', 12, 33, 'APPROVED'),
+(30, 'Empresa 30 S.A.S.', 'Descripción generada 30', 'contacto30@empresa.com', 17, 10, 'APPROVED'),
+(31, 'Empresa 31 S.A.S.', 'Descripción generada 31', 'contacto31@empresa.com', 8, 18, 'APPROVED'),
+(32, 'Empresa 32 S.A.S.', 'Descripción generada 32', 'contacto32@empresa.com', 19, 11, 'APPROVED'),
+(33, 'Empresa 33 S.A.S.', 'Descripción generada 33', 'contacto33@empresa.com', 18, 26, 'APPROVED'),
+(34, 'Empresa 34 S.A.S.', 'Descripción generada 34', 'contacto34@empresa.com', 15, 24, 'APPROVED'),
+(35, 'Empresa 35 S.A.S.', 'Descripción generada 35', 'contacto35@empresa.com', 19, 8, 'APPROVED'),
+(36, 'Empresa 36 S.A.S.', 'Descripción generada 36', 'contacto36@empresa.com', 2, 19, 'APPROVED'),
+(37, 'Empresa 37 S.A.S.', 'Descripción generada 37', 'contacto37@empresa.com', 15, 38, 'APPROVED'),
+(38, 'Empresa 38 S.A.S.', 'Descripción generada 38', 'contacto38@empresa.com', 9, 25, 'APPROVED'),
+(39, 'Empresa 39 S.A.S.', 'Descripción generada 39', 'contacto39@empresa.com', 16, 21, 'APPROVED'),
+(40, 'Empresa 40 S.A.S.', 'Descripción generada 40', 'contacto40@empresa.com', 13, 40, 'APPROVED'),
+(41, 'Empresa 41 S.A.S.', 'Descripción generada 41', 'contacto41@empresa.com', 2, 31, 'APPROVED'),
+(42, 'Empresa 42 S.A.S.', 'Descripción generada 42', 'contacto42@empresa.com', 10, 23, 'APPROVED'),
+(43, 'Empresa 43 S.A.S.', 'Descripción generada 43', 'contacto43@empresa.com', 16, 20, 'APPROVED');
+
+INSERT INTO skills (name) VALUES
+    ('React'), ('Node.js'), ('PostgreSQL'), ('Python'), ('SQL'), ('Excel avanzado')
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO job_offers (company_id, title, description, requirements, functions, salary_min, salary_max, min_experience_years, program_id, closing_date, status) VALUES
+(2, 'Desarrollador Senior Backend', 'Unete a nuestro equipo core', '5 años Python', 'Desarrollar APIs', 4000000, 6000000, 5, 1, '2026-12-31', 'ACTIVE'),
+(4, 'Enfermero/a Jefe', 'Hospital central', 'Liderazgo y proactividad', 'Gestión de pacientes', 2500000, 3500000, 3, 4, '2026-10-31', 'ACTIVE'),
+(5, 'Analista Contable', 'Auditoria financiera', 'Excel avanzado', 'Revisión de estados', 1800000, 2200000, 1, 8, '2026-09-15', 'ACTIVE'),
+(6, 'Ingeniero de Datos', 'Procesamiento masivo', 'SQL, Spark', 'ETL', 3500000, 5000000, 2, 1, '2026-11-20', 'ACTIVE'),
+(7, 'Gerente de Marketing', 'Lanzamiento de campañas', 'Marketing digital', 'Estrategia SEO/SEM', 3000000, 4500000, 4, 7, '2026-12-01', 'ACTIVE'),
+(2, 'Desarrollador Frontend', 'React JS Angular', '3 años React', 'Maquetación UI', 3000000, 4000000, 3, 1, '2026-11-01', 'ACTIVE');
+
+INSERT INTO job_offer_skills (job_offer_id, skill_id, required_level)
+SELECT 1, id, 'Intermedio' FROM skills WHERE name IN ('React', 'Node.js', 'PostgreSQL')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO job_offer_skills (job_offer_id, skill_id, required_level)
+SELECT 2, id, 'Intermedio' FROM skills WHERE name IN ('Python', 'SQL', 'Excel avanzado')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO applications (job_offer_id, graduate_id, application_date, status) VALUES
+(1, 3, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(2, 3, NOW() - (random() * 180 || ' days')::interval, 'ENTREVISTADO'),
+(3, 3, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(4, 3, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(5, 3, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(1, 44, NOW() - (random() * 180 || ' days')::interval, 'ENTREVISTADO'),
+(1, 45, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(1, 46, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(2, 47, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(2, 48, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(2, 49, NOW() - (random() * 180 || ' days')::interval, 'ENTREVISTADO'),
+(3, 50, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(3, 51, NOW() - (random() * 180 || ' days')::interval, 'ENTREVISTADO'),
+(3, 52, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(4, 53, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(4, 54, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(4, 55, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(5, 56, NOW() - (random() * 180 || ' days')::interval, 'ENTREVISTADO'),
+(5, 57, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(5, 58, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(6, 59, NOW() - (random() * 180 || ' days')::interval, 'ENTREVISTADO'),
+(6, 60, NOW() - (random() * 180 || ' days')::interval, 'CONTRATADO'),
+(1, 61, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO'),
+(2, 62, NOW() - (random() * 180 || ' days')::interval, 'POSTULADO');
+
+-- ------------------------------------------------------------------------------
+-- MATCHMAKING DB
+-- ------------------------------------------------------------------------------
+\c matchmaking_db
+
+CREATE TABLE matchmaking_weights (
+    id SERIAL PRIMARY KEY,
+    program_weight NUMERIC(4, 2) DEFAULT 0.40,
+    skills_weight NUMERIC(4, 2) DEFAULT 0.40,
+    experience_weight NUMERIC(4, 2) DEFAULT 0.20,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE matches (
+    id SERIAL PRIMARY KEY,
+    graduate_id INT NOT NULL,
+    job_offer_id INT NOT NULL,
     score NUMERIC(5,2) NOT NULL,
     program_score NUMERIC(5,2),
     skills_score NUMERIC(5,2),
@@ -1220,45 +713,13 @@ CREATE TABLE IF NOT EXISTS matches (
     UNIQUE(graduate_id, job_offer_id)
 );
 
--- Notificaciones de alta compatibilidad (Módulo 3.2)
-CREATE TABLE IF NOT EXISTS match_notifications (
+CREATE TABLE match_notifications (
     id SERIAL PRIMARY KEY,
-    graduate_id INT REFERENCES graduates(user_id) ON DELETE CASCADE,
-    job_offer_id INT REFERENCES job_offers(id) ON DELETE CASCADE,
+    graduate_id INT NOT NULL,
+    job_offer_id INT NOT NULL,
     score NUMERIC(5,2) NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- La tabla matchmaking_weights ya existe desde init.sql; solo aseguramos
--- que exista al menos un registro con los pesos por defecto.
-INSERT INTO matchmaking_weights (program_weight, skills_weight, experience_weight)
-SELECT 0.40, 0.40, 0.20
-WHERE NOT EXISTS (SELECT 1 FROM matchmaking_weights);
-
--- ------------------------------------------------------------------------------
--- DATOS DUMMY para probar el algoritmo con las vacantes/egresado ya insertados
--- en init.sql (job_offers 1 y 2, graduate user_id = 3)
--- ------------------------------------------------------------------------------
-INSERT INTO skills (name) VALUES
-    ('React'), ('Node.js'), ('PostgreSQL'), ('Python'), ('SQL'), ('Excel avanzado')
-ON CONFLICT (name) DO NOTHING;
-
--- Requisitos de habilidades para la vacante 1 (Desarrollador Full Stack)
-INSERT INTO job_offer_skills (job_offer_id, skill_id, required_level)
-SELECT 1, id, 'Intermedio' FROM skills WHERE name IN ('React', 'Node.js', 'PostgreSQL')
-ON CONFLICT DO NOTHING;
-
--- Requisitos de habilidades para la vacante 2 (Analista de Datos Junior)
-INSERT INTO job_offer_skills (job_offer_id, skill_id, required_level)
-SELECT 2, id, 'Intermedio' FROM skills WHERE name IN ('Python', 'SQL', 'Excel avanzado')
-ON CONFLICT DO NOTHING;
-
--- Experiencia mínima de cada vacante
-UPDATE job_offers SET min_experience_years = 2 WHERE id = 1;
-UPDATE job_offers SET min_experience_years = 0 WHERE id = 2;
-
--- Habilidades del egresado de prueba (Juan Pérez, user_id = 3)
-INSERT INTO graduate_skills (graduate_id, skill_id, proficiency_level)
-SELECT 3, id, 'Intermedio' FROM skills WHERE name IN ('React', 'PostgreSQL')
-ON CONFLICT DO NOTHING;
+INSERT INTO matchmaking_weights (program_weight, skills_weight, experience_weight) VALUES (0.40, 0.40, 0.20);
