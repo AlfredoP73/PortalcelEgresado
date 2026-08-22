@@ -7,34 +7,39 @@ import shutil
 from app.graduates import models, schemas
 from app.auth.models import User
 from app.auth.utils.auth_utils import get_password_hash
-import app.companies.models as company_models
+import httpx
+
+COMPANIES_URL = "http://companies:8000/api/internal"
+AUTH_URL = "http://auth:8000/api/internal"
 
 def admin_get_all_applications(db: Session):
-    return db.query(company_models.CandidateApplication).options(
-        joinedload(company_models.CandidateApplication.job_offer)
-        .joinedload(company_models.JobOffer.company)
-        .joinedload(company_models.Company.sector),
-        joinedload(company_models.CandidateApplication.job_offer)
-        .joinedload(company_models.JobOffer.company)
-        .joinedload(company_models.Company.city),
-    ).all()
+    with httpx.Client() as client:
+        try:
+            response = client.get(f"{COMPANIES_URL}/applications")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error conectando con Companies: {str(e)}")
 
 def admin_create_graduate(body: schemas.AdminGraduateCreate, db: Session):
-    existing_user = db.query(User).filter(User.email == body.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="El correo ya está registrado")
-        
-    new_user = User(
-        email=body.email,
-        password_hash=get_password_hash(body.password),
-        role_id=3
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
+    # Call auth microservice to create user
+    with httpx.Client() as client:
+        try:
+            auth_resp = client.post(
+                f"{AUTH_URL}/users", 
+                json={"email": body.email, "password": body.password, "role_id": 3}
+            )
+            if auth_resp.status_code == 400:
+                raise HTTPException(status_code=400, detail=auth_resp.json().get("detail", "Error"))
+            auth_resp.raise_for_status()
+            new_user = auth_resp.json()
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error conectando con Auth: {str(e)}")
+            
     new_grad = models.Graduate(
-        user_id=new_user.id,
+        user_id=new_user["id"],
         first_name=body.first_name,
         last_name=body.last_name,
         program_id=body.program_id,
@@ -71,11 +76,11 @@ def create_or_update_profile(profile: schemas.GraduateCreate, current_user: dict
     matchmaking_adapter.trigger_recalculate(graduate_id=current_user["id"])
     return db_profile
 
-from app.core.adapters import MinioStorageAdapter, HttpMatchmakingAdapter
+from app.core.adapters import MinioStorageAdapter, RabbitMQMatchmakingAdapter
 
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "cvs")
 storage_adapter = MinioStorageAdapter()
-matchmaking_adapter = HttpMatchmakingAdapter()
+matchmaking_adapter = RabbitMQMatchmakingAdapter()
 
 def upload_cv(file: UploadFile, current_user: dict, db: Session):
     db_profile = db.query(models.Graduate).filter(models.Graduate.user_id == current_user["id"]).first()

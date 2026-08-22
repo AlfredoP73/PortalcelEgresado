@@ -69,3 +69,31 @@ def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
         role_name=user.role.name,
         email_verified=user.email_verified,
     )
+
+from fastapi import APIRouter, HTTPException
+
+internal_router = APIRouter(prefix="/api/internal", tags=["Internal"])
+
+@internal_router.post("/users")
+def create_user_internal(body: dict, db: Session = Depends(get_db)):
+    from app.auth.models import User
+    from app.auth.utils.auth_utils import get_password_hash
+    
+    email = body.get("email")
+    password = body.get("password")
+    role_id = body.get("role_id", 3)
+    
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="El correo ya está registrado")
+        
+    new_user = User(
+        email=email,
+        password_hash=get_password_hash(password),
+        role_id=role_id,
+        email_verified=True
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"id": new_user.id, "email": new_user.email, "role_id": new_user.role_id}

@@ -4,45 +4,49 @@ from typing import Optional
 from datetime import datetime
 from app.graduates import models, schemas
 import app.companies.models as company_models
-from app.core.adapters import HttpMatchmakingAdapter
+from app.core.adapters import RabbitMQMatchmakingAdapter
+
+import httpx
+
+COMPANIES_URL = "http://companies:8000/api/internal"
 
 def get_jobs(skip: int, limit: int, q: Optional[str], salary_min: Optional[int], db: Session):
-    query = db.query(company_models.JobOffer).filter(company_models.JobOffer.status == company_models.JobOfferStatus.ACTIVE)
-    if q:
-        query = query.filter(company_models.JobOffer.title.ilike(f"%{q}%"))
-    if salary_min:
-        query = query.filter(company_models.JobOffer.salary_min >= salary_min)
-    return query.offset(skip).limit(limit).all()
+    params = {"skip": skip, "limit": limit}
+    if q: params["q"] = q
+    if salary_min: params["salary_min"] = salary_min
+    
+    with httpx.Client() as client:
+        try:
+            response = client.get(f"{COMPANIES_URL}/jobs", params=params)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error conectando con Companies: {str(e)}")
 
 def apply_for_job(application: schemas.ApplicationCreate, current_user: dict, db: Session):
-    existing = db.query(company_models.CandidateApplication).filter(
-        company_models.CandidateApplication.job_offer_id == application.job_offer_id,
-        company_models.CandidateApplication.graduate_id == current_user["id"]
-    ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Ya te has postulado a esta vacante")
-    
-    new_app = company_models.CandidateApplication(
-        job_offer_id=application.job_offer_id,
-        graduate_id=current_user["id"],
-        application_date=datetime.now()
-    )
-    db.add(new_app)
-    db.commit()
-    db.refresh(new_app)
-    return new_app
+    with httpx.Client() as client:
+        try:
+            response = client.post(
+                f"{COMPANIES_URL}/applications/apply", 
+                json={"graduate_id": current_user["id"], "job_offer_id": application.job_offer_id}
+            )
+            if response.status_code == 400:
+                raise HTTPException(status_code=400, detail=response.json().get("detail", "Error al aplicar"))
+            response.raise_for_status()
+            return response.json()
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error conectando con Companies: {str(e)}")
 
 def get_my_applications(current_user: dict, db: Session):
-    return db.query(company_models.CandidateApplication).options(
-        joinedload(company_models.CandidateApplication.job_offer)
-        .joinedload(company_models.JobOffer.company)
-        .joinedload(company_models.Company.sector),
-        joinedload(company_models.CandidateApplication.job_offer)
-        .joinedload(company_models.JobOffer.company)
-        .joinedload(company_models.Company.city),
-    ).filter(
-        company_models.CandidateApplication.graduate_id == current_user["id"]
-    ).all()
+    with httpx.Client() as client:
+        try:
+            response = client.get(f"{COMPANIES_URL}/applications/graduate/{current_user['id']}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error conectando con Companies: {str(e)}")
 
 def get_surveys(db: Session):
     return db.query(models.Survey).filter(models.Survey.is_active == True).all()
@@ -75,7 +79,7 @@ def submit_survey_response(survey_id: int, answers: list, current_user: dict, db
     db.commit()
     db.refresh(new_response)
     
-    adapter = HttpMatchmakingAdapter()
+    adapter = RabbitMQMatchmakingAdapter()
     adapter.trigger_recalculate(graduate_id=current_user["id"])
     
     return {"detail": "Encuesta enviada"}

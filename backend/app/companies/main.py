@@ -21,10 +21,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.companies.internal_router import internal_router
+
 app.include_router(catalog_router)
 app.include_router(company_router)
 app.include_router(job_offer_router)
 app.include_router(application_router)
+app.include_router(internal_router)
 
 
 @app.get("/")

@@ -63,3 +63,12 @@ def update_program(program_id: int, program: schemas.ProgramUpdate, db: Session 
 @router.delete("/programs/{program_id}", dependencies=[Depends(require_admin)])
 def delete_program(program_id: int, db: Session = Depends(get_db)):
     return catalog_service.delete_program(program_id, db)
+
+from app.companies.internal_router import internal_router
+
+@internal_router.get("/programs")
+def get_programs_internal(db: Session = Depends(get_db)):
+    from app.companies import models
+    programs = db.query(models.Program).all()
+    return [{"id": p.id, "name": p.name} for p in programs]
+

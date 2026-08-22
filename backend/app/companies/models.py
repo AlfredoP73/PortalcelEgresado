@@ -2,8 +2,6 @@ from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 import enum
 from app.database import Base
-from app.graduates.models import Graduate
-
 # --- Enums ---
 class CompanyStatus(str, enum.Enum):
     PENDING = "PENDING"
@@ -49,7 +47,7 @@ class JobOfferSkill(Base):
 # --- Tablas Principales Módulo 2 ---
 class Company(Base):
     __tablename__ = "companies"
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     description = Column(Text)
     contact_email = Column(String, nullable=False)
@@ -86,9 +84,8 @@ class CandidateApplication(Base):
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     job_offer_id = Column(Integer, ForeignKey("job_offers.id"), nullable=False)
-    graduate_id = Column(Integer, ForeignKey("graduates.user_id"), nullable=False) # Refers to Module 1
+    graduate_id = Column(Integer, nullable=False) # ID of graduate from Graduates microservice
     application_date = Column(DateTime, nullable=False)
     status = Column(Enum(ApplicationStatus), default=ApplicationStatus.POSTULADO)
 
     job_offer = relationship("JobOffer", back_populates="applications")
-    graduate = relationship("Graduate")

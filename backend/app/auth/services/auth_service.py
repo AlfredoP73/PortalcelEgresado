@@ -46,7 +46,12 @@ def authenticate_user(body: schemas.LoginRequest, db: Session) -> schemas.TokenR
             detail="Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
         )
 
-    token = create_access_token(data={"sub": user.email})
+    data_payload = {
+        "sub": user.email,
+        "id": user.id,
+        "role_id": user.role_id
+    }
+    token = create_access_token(data=data_payload)
     return schemas.TokenResponse(
         access_token=token,
         token_type="bearer",
@@ -129,7 +134,12 @@ def impersonate_user(body: schemas.ImpersonateRequest, admin_user: models.User, 
     if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario objetivo no encontrado")
         
-    new_token = create_access_token(data={"sub": target_user.email})
+    data_payload = {
+        "sub": target_user.email,
+        "id": target_user.id,
+        "role_id": target_user.role_id
+    }
+    new_token = create_access_token(data=data_payload)
     return schemas.TokenResponse(
         access_token=new_token,
         token_type="bearer",

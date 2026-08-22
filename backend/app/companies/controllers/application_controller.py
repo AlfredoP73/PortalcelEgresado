@@ -36,3 +36,59 @@ def get_application_candidate(application_id: int, db: Session = Depends(get_db)
 @router.get("/talent-pool", response_model=List[schemas.GraduateWithContact], dependencies=[Depends(require_admin_or_company)])
 def get_talent_pool(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return application_service.get_talent_pool(db)
+
+from app.companies.internal_router import internal_router
+from datetime import datetime
+
+@internal_router.get("/applications/graduate/{graduate_id}")
+def get_applications_by_graduate_internal(graduate_id: int, db: Session = Depends(get_db)):
+    from sqlalchemy.orm import joinedload
+    from app.companies import models
+    return db.query(models.CandidateApplication).options(
+        joinedload(models.CandidateApplication.job_offer)
+        .joinedload(models.JobOffer.company)
+        .joinedload(models.Company.sector),
+        joinedload(models.CandidateApplication.job_offer)
+        .joinedload(models.JobOffer.company)
+        .joinedload(models.Company.city),
+    ).filter(
+        models.CandidateApplication.graduate_id == graduate_id
+    ).all()
+
+@internal_router.post("/applications/apply")
+def apply_internal(payload: dict, db: Session = Depends(get_db)):
+    from app.companies import models
+    from fastapi import HTTPException
+    
+    graduate_id = payload.get("graduate_id")
+    job_offer_id = payload.get("job_offer_id")
+    
+    existing = db.query(models.CandidateApplication).filter(
+        models.CandidateApplication.job_offer_id == job_offer_id,
+        models.CandidateApplication.graduate_id == graduate_id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya te has postulado a esta vacante")
+    
+    new_app = models.CandidateApplication(
+        job_offer_id=job_offer_id,
+        graduate_id=graduate_id,
+        application_date=datetime.now()
+    )
+    db.add(new_app)
+    db.commit()
+    db.refresh(new_app)
+    return new_app
+
+@internal_router.get("/applications")
+def get_all_applications_internal(db: Session = Depends(get_db)):
+    from sqlalchemy.orm import joinedload
+    from app.companies import models
+    return db.query(models.CandidateApplication).options(
+        joinedload(models.CandidateApplication.job_offer)
+        .joinedload(models.JobOffer.company)
+        .joinedload(models.Company.sector),
+        joinedload(models.CandidateApplication.job_offer)
+        .joinedload(models.JobOffer.company)
+        .joinedload(models.Company.city),
+    ).all()
