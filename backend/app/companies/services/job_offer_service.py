@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.companies import models, schemas
 
-from app.core.adapters import HttpMatchmakingAdapter
+from app.core.adapters import RabbitMQMatchmakingAdapter
 
 def create_job_offer(body: schemas.JobOfferCreate, current_user: dict, db: Session):
     company = db.query(models.Company).filter(models.Company.user_id == current_user["id"]).first()
@@ -13,13 +13,13 @@ def create_job_offer(body: schemas.JobOfferCreate, current_user: dict, db: Sessi
         company_id=company.user_id,
         title=body.title,
         description=body.description,
+        requirements=body.requirements,
+        functions=body.functions,
         program_id=body.program_id,
         min_experience_years=body.min_experience_years,
         salary_min=body.salary_min,
         salary_max=body.salary_max,
-        city_id=body.city_id,
-        contract_type=body.contract_type,
-        work_model=body.work_model,
+        closing_date=body.closing_date,
         status="ACTIVE"
     )
     db.add(db_offer)
@@ -36,8 +36,11 @@ def create_job_offer(body: schemas.JobOfferCreate, current_user: dict, db: Sessi
         db.add(skill)
     db.commit()
 
-    adapter = HttpMatchmakingAdapter()
-    adapter.trigger_recalculate(job_offer_id=db_offer.id)
+    adapter = RabbitMQMatchmakingAdapter()
+    try:
+        adapter.trigger_recalculate(job_offer_id=db_offer.id)
+    except Exception as e:
+        print(f"Matchmaking warning: {e}")
 
     return db_offer
 

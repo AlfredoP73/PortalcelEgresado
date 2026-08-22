@@ -21,111 +21,28 @@ from app.matchmaking.services.criteria_service import get_weights
 UMBRAL_NOTIFICACION = Decimal("75.00")
 
 
-# ── Lectura de datos de otros dominios (misma BD, distintos microservicios) ──
+# ── Lectura de datos de otros dominios (API Composition) ──
+import httpx
+
 def _get_graduate_data(db: Session, graduate_id: int) -> Optional[dict]:
-    row = db.execute(
-        text("SELECT user_id, program_id FROM graduates WHERE user_id = :gid"),
-        {"gid": graduate_id},
-    ).mappings().first()
-    if not row:
+    try:
+        resp = httpx.get(f"http://graduates:8000/api/internal/matchmaking/graduates/{graduate_id}", timeout=5.0)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception:
         return None
 
-    skills_rows = db.execute(
-        text("SELECT skill_id, proficiency_level FROM graduate_skills WHERE graduate_id = :gid"),
-        {"gid": graduate_id},
-    ).mappings().all()
-
-    exp_rows = db.execute(
-        text("SELECT start_date, end_date FROM work_experiences WHERE graduate_id = :gid"),
-        {"gid": graduate_id},
-    ).mappings().all()
-
-    total_dias = 0
-    for exp in exp_rows:
-        inicio = exp["start_date"]
-        fin = exp["end_date"] or date.today()
-        if inicio:
-            total_dias += (fin - inicio).days
-    total_years = round(total_dias / 365.25, 1) if total_dias > 0 else 0.0
-
-    return {
-        "program_id": row["program_id"],
-        "skills": {r["skill_id"]: r["proficiency_level"] for r in skills_rows},
-        "total_experience_years": total_years,
-        "survey": _get_survey_context(db, graduate_id),
-    }
-
-
-# ── Encuesta de seguimiento (M01) ─────────────────────────────────────────────
 def _get_survey_context(db: Session, graduate_id: int) -> dict:
-    """Extrae respuestas de la última encuesta del egresado (bonus tie-breaker).
-
-    Localiza las preguntas por palabras clave en el texto de la pregunta, así
-    el algoritmo no depende de ids fijos. Respuestas conocidas:
-      - ¿Se encuentra laborando actualmente?        -> laborando
-      - ¿En qué sector económico se desempeña?       -> sector
-      - ¿Su empleo actual tiene relación con su programa académico? -> relacion_programa
-    """
-    resp = db.execute(
-        text(
-            """SELECT sr.answers_json, s.questions_json
-               FROM survey_responses sr
-               JOIN surveys s ON s.id = sr.survey_id
-               WHERE sr.graduate_id = :gid
-               ORDER BY sr.submitted_at DESC
-               LIMIT 1"""
-        ),
-        {"gid": graduate_id},
-    ).mappings().first()
-    if not resp:
-        return {"laborando": None, "sector": None, "relacion_programa": None}
-
-    answers = resp["answers_json"] or {}
-    questions = resp["questions_json"] or []
-    qid = {}
-    for q in questions:
-        t = str(q.get("question", "")).lower()
-        if "laborando" in t or ("encuentra" in t and "laboral" in t):
-            qid["laborando"] = q.get("id")
-        elif "sector" in t:
-            qid["sector"] = q.get("id")
-        elif "relaci" in t and ("programa" in t or "academico" in t or "académico" in t):
-            qid["relacion_programa"] = q.get("id")
-
-    return {
-        "laborando": answers.get(qid["laborando"]) if qid.get("laborando") else None,
-        "sector": answers.get(qid["sector"]) if qid.get("sector") else None,
-        "relacion_programa": answers.get(qid["relacion_programa"]) if qid.get("relacion_programa") else None,
-    }
-
+    # Included in _get_graduate_data now
+    return {"laborando": None, "sector": None, "relacion_programa": None}
 
 def _get_job_offer_data(db: Session, job_offer_id: int) -> Optional[dict]:
-    row = db.execute(
-        text(
-            """SELECT jo.id, jo.program_id, jo.min_experience_years, jo.status,
-                      sec.name AS company_sector
-               FROM job_offers jo
-               JOIN companies co ON co.user_id = jo.company_id
-               LEFT JOIN sectors sec ON sec.id = co.sector_id
-               WHERE jo.id = :jid"""
-        ),
-        {"jid": job_offer_id},
-    ).mappings().first()
-    if not row:
+    try:
+        resp = httpx.get(f"http://companies:8000/api/internal/matchmaking/jobs/{job_offer_id}", timeout=5.0)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception:
         return None
-
-    skills_rows = db.execute(
-        text("SELECT skill_id, required_level FROM job_offer_skills WHERE job_offer_id = :jid"),
-        {"jid": job_offer_id},
-    ).mappings().all()
-
-    return {
-        "program_id": row["program_id"],
-        "min_experience_years": row["min_experience_years"] or 0,
-        "status": row["status"],
-        "company_sector": row["company_sector"],
-        "required_skills": {r["skill_id"]: r["required_level"] for r in skills_rows},
-    }
 
 
 # ── Algoritmo puro (fácil de testear unitariamente) ──────────────────────────
@@ -197,10 +114,14 @@ def calcular_match_individual(db: Session, graduate_id: int, job_offer_id: int) 
 
 def recalcular_por_egresado(db: Session, graduate_id: int) -> list[Match]:
     """Se dispara cuando el egresado actualiza su perfil/hoja de vida."""
-    job_offer_ids = [
-        r["id"]
-        for r in db.execute(text("SELECT id FROM job_offers WHERE status = 'ACTIVE'")).mappings().all()
-    ]
+    try:
+        resp = httpx.get("http://companies:8000/api/internal/matchmaking/jobs", timeout=5.0)
+        if resp.status_code == 200:
+            job_offer_ids = resp.json()
+        else:
+            job_offer_ids = []
+    except Exception:
+        job_offer_ids = []
     resultados = []
     for jid in job_offer_ids:
         m = calcular_match_individual(db, graduate_id, jid)
@@ -211,7 +132,14 @@ def recalcular_por_egresado(db: Session, graduate_id: int) -> list[Match]:
 
 def recalcular_por_vacante(db: Session, job_offer_id: int) -> list[Match]:
     """Se dispara cuando la empresa publica o edita una vacante."""
-    graduate_ids = [r["user_id"] for r in db.execute(text("SELECT user_id FROM graduates")).mappings().all()]
+    try:
+        resp = httpx.get("http://graduates:8000/api/internal/matchmaking/graduates", timeout=5.0)
+        if resp.status_code == 200:
+            graduate_ids = resp.json()
+        else:
+            graduate_ids = []
+    except Exception:
+        graduate_ids = []
     resultados = []
     for gid in graduate_ids:
         m = calcular_match_individual(db, gid, job_offer_id)

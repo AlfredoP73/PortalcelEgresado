@@ -223,7 +223,7 @@ export default function Kanban() {
                             whileHover={{ y: -2 }}
                             key={app.id} 
                             draggable={!isAdmin}
-                            onDragStart={(e) => handleDragStart(e, app.id)}
+                            onDragStart={(e: any) => handleDragStart(e, app.id)}
                             onDragEnd={() => setDraggingAppId(null)}
                             onClick={() => setSelectedApplicationId(app.id)}
                             className={twMerge(

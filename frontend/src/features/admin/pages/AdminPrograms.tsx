@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import api from '../../../api';
 import { Plus, Trash2, Loader2, Save, Edit2, X, BookOpen } from 'lucide-react';
+import Pagination from '../../../components/Pagination';
 
 interface CatalogItem {
   id: number;
@@ -16,6 +17,8 @@ export default function AdminPrograms() {
   const [newItemName, setNewItemName] = useState('');
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchItems();
@@ -76,6 +79,8 @@ export default function AdminPrograms() {
     }
   };
 
+  const paginatedItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div className="space-y-6">
       <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -100,44 +105,52 @@ export default function AdminPrograms() {
             <p className="text-ink-secondary mt-1">Crea el primer programa académico para comenzar.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4 w-full">Nombre del Programa</th>
-                <th className="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-6 py-4 text-ink-secondary font-mono">{item.id}</td>
-                  <td className="px-6 py-4 font-semibold text-ink">{item.name}</td>
-                  <td className="px-6 py-4 text-right flex justify-end gap-2">
-                    <button
-                      onClick={() => handleEdit(item)}
-                      className="text-brand-600 hover:bg-brand-50 p-2 rounded-lg transition-colors border border-transparent hover:border-brand-200"
-                      title="Editar"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors border border-transparent hover:border-red-200"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+          <>
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4 w-full">Nombre del Programa</th>
+                  <th className="px-6 py-4 text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedItems.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-6 py-4 text-ink-secondary font-mono">{item.id}</td>
+                    <td className="px-6 py-4 font-semibold text-ink">{item.name}</td>
+                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="text-brand-600 hover:bg-brand-50 p-2 rounded-lg transition-colors border border-transparent hover:border-brand-200"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors border border-transparent hover:border-red-200"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={items.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
           <div className="w-full max-w-md card bg-[var(--bg-modal)] shadow-2xl animate-scale-in">
             <div className="flex justify-between items-center p-6 border-b border-[var(--border-color)]">
               <h3 className="text-lg font-bold text-ink">

@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: egresados_db
+      POSTGRES_DB: postgres
     ports:
       - "5434:5432"
     volumes:
@@ -26,10 +26,8 @@ services:
       dockerfile: ./app/auth/Dockerfile
     container_name: portaldel_egresado_auth
     command: uvicorn app.auth.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8002:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      DATABASE_URL: postgresql://postgres:password@db:5432/auth_db
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -52,10 +50,8 @@ services:
       dockerfile: ./app/companies/Dockerfile
     container_name: portaldel_egresado_companies
     command: uvicorn app.companies.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8001:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      DATABASE_URL: postgresql://postgres:password@db:5432/companies_db
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -76,10 +72,8 @@ services:
       dockerfile: ./app/graduates/Dockerfile
     container_name: portaldel_egresado_graduates
     command: uvicorn app.graduates.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8003:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      DATABASE_URL: postgresql://postgres:password@db:5432/graduates_db
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -104,10 +98,8 @@ services:
       dockerfile: ./app/dashboard/Dockerfile
     container_name: portaldel_egresado_dashboard
     command: uvicorn app.dashboard.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8004:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      DATABASE_URL: postgresql://postgres:password@db:5432/auth_db
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -130,10 +122,8 @@ services:
       dockerfile: ./app/matchmaking/Dockerfile
     container_name: portaldel_egresado_matchmaking
     command: uvicorn app.matchmaking.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8005:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/egresados_db
+      DATABASE_URL: postgresql://postgres:password@db:5432/matchmaking_db
       SECRET_KEY: ${SECRET_KEY:-cambia_esto_en_produccion_usa_32_chars}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -159,6 +149,69 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+  # ── API Gateway (Nginx) ──────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: portaldel_egresado_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth
+      - companies
+      - graduates
+      - dashboard
+      - matchmaking
+
+  # ── Message Broker (RabbitMQ) ─────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: portaldel_egresado_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Centralized Logging (Loki + Promtail + Grafana) ───────────────────────
+  loki:
+    image: grafana/loki:2.8.2
+    container_name: portaldel_egresado_loki
+    user: "0:0"
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./logging/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.8.2
+    container_name: portaldel_egresado_promtail
+    volumes:
+      - ./logging/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: portaldel_egresado_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./logging/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+    depends_on:
+      - loki
+
   # ── Frontend React (puerto 5176) ─────────────────────────────────────────
   frontend:
     build:
@@ -167,11 +220,11 @@ services:
     ports:
       - "5176:5176"
     environment:
-      VITE_AUTH_URL: http://localhost:8002
-      VITE_COMPANIES_URL: http://localhost:8001
-      VITE_GRADUATES_URL: http://localhost:8003
-      VITE_DASHBOARD_URL: http://localhost:8004
-      VITE_MATCHMAKING_URL: http://localhost:8005
+      VITE_AUTH_URL: http://localhost:8080
+      VITE_COMPANIES_URL: http://localhost:8080
+      VITE_GRADUATES_URL: http://localhost:8080
+      VITE_DASHBOARD_URL: http://localhost:8080
+      VITE_MATCHMAKING_URL: http://localhost:8080
     depends_on:
       - auth
       - companies

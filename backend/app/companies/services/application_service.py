@@ -14,9 +14,27 @@ def get_applications_by_job(job_offer_id: int, current_user: dict, db: Session):
         job = db.query(models.JobOffer).filter(models.JobOffer.id == job_offer_id, models.JobOffer.company_id == current_user["id"]).first()
         if not job:
             raise HTTPException(status_code=403, detail="No tienes acceso a esta vacante")
-    return db.query(models.CandidateApplication).options(joinedload(models.CandidateApplication.graduate)).filter(
+    
+    applications = db.query(models.CandidateApplication).filter(
         models.CandidateApplication.job_offer_id == job_offer_id
     ).all()
+    
+    import httpx
+    try:
+        response = httpx.get("http://graduates:8000/api/internal/graduates", timeout=5.0)
+        response.raise_for_status()
+        all_graduates = {g["user_id"]: g for g in response.json()}
+    except Exception as e:
+        print(f"Error fetching graduates data: {e}")
+        all_graduates = {}
+        
+    result = []
+    for app in applications:
+        app_dict = {k: v for k, v in app.__dict__.items() if not k.startswith('_')}
+        app_dict["graduate"] = all_graduates.get(app.graduate_id)
+        result.append(app_dict)
+        
+    return result
 
 def update_application_status(application_id: int, status_update: schemas.ApplicationUpdateStatus, current_user: dict, db: Session):
     db_app = db.query(models.CandidateApplication).join(models.JobOffer).filter(
@@ -39,35 +57,22 @@ def get_application_candidate(application_id: int, current_user: dict, db: Sessi
     if not app:
         raise HTTPException(status_code=404, detail="Application not found or unauthorized")
         
-    from app.graduates.models import Graduate
-    from app.auth.models import User
-    candidate = db.query(Graduate).filter(Graduate.user_id == app.graduate_id).first()
-    if not candidate:
-        raise HTTPException(status_code=404, detail="Candidate not found")
-        
-    user = db.query(User).filter(User.id == candidate.user_id).first()
-    candidate_dict = {k: v for k, v in candidate.__dict__.items() if not k.startswith('_')}
-    candidate_dict['email'] = user.email if user else None
-    
-    candidate_dict['experiences'] = [{k: v for k, v in exp.__dict__.items() if not k.startswith('_')} for exp in candidate.experiences]
-    candidate_dict['academic_histories'] = [{k: v for k, v in edu.__dict__.items() if not k.startswith('_')} for edu in candidate.academic_histories]
-    candidate_dict['certifications'] = [{k: v for k, v in cert.__dict__.items() if not k.startswith('_')} for cert in candidate.certifications]
+    import httpx
+    try:
+        response = httpx.get(f"http://graduates:8000/api/internal/graduates/{app.graduate_id}", timeout=5.0)
+        response.raise_for_status()
+        candidate_dict = response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching candidate data: {str(e)}")
     
     return candidate_dict
 
 def get_talent_pool(db: Session):
-    from app.graduates.models import Graduate
-    from app.auth.models import User
-    
-    graduates = db.query(Graduate).all()
-    results = []
-    for g in graduates:
-        user = db.query(User).filter(User.id == g.user_id).first()
-        g_dict = {k: v for k, v in g.__dict__.items() if not k.startswith('_')}
-        g_dict['email'] = user.email if user else None
-        g_dict['experiences'] = [{k: v for k, v in exp.__dict__.items() if not k.startswith('_')} for exp in g.experiences]
-        g_dict['academic_histories'] = [{k: v for k, v in edu.__dict__.items() if not k.startswith('_')} for edu in g.academic_histories]
-        g_dict['certifications'] = [{k: v for k, v in cert.__dict__.items() if not k.startswith('_')} for cert in g.certifications]
-        results.append(g_dict)
-        
-    return results
+    import httpx
+    try:
+        response = httpx.get("http://graduates:8000/api/internal/graduates", timeout=5.0)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        # Si falla la comunicación, podemos devolver una lista vacía o levantar error
+        return []
